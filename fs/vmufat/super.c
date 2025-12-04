@@ -229,7 +229,7 @@ static int vmufat_statfs(struct dentry *dentry, struct kstatfs *kstatbuf)
 	error = vmufat_count_freeblocks(sb, kstatbuf);
 	if (error)
 		goto out;
-	kstatbuf->f_type = VMUFAT_MAGIC;
+	kstatbuf->f_type = VMUFAT_SUPER_MAGIC;
 	kstatbuf->f_bsize = sb->s_blocksize;
 	kstatbuf->f_namelen = VMUFAT_NAMELEN;
 out:
@@ -406,7 +406,7 @@ static int vmufat_fill_super(struct super_block *sb, struct fs_context *fc)
 
 	sb_set_blocksize(sb, VMU_BLK_SZ);
 	sb->s_blocksize_bits = ilog2(VMU_BLK_SZ);
-	sb->s_magic = VMUFAT_MAGIC;
+	sb->s_magic = VMUFAT_SUPER_MAGIC;
 	sb->s_op = &vmufat_super_operations;
 
 	/* 
@@ -515,7 +515,6 @@ static int vmufat_init_fs_context(struct fs_context *fc)
 static struct file_system_type vmufat_fs_type = {
 	.owner		= THIS_MODULE,
 	.name		= "vmufat",
-//	.mount		= vmufat_mount,
 	.kill_sb	= kill_block_super,
 	.fs_flags	= FS_REQUIRES_DEV,
 	.init_fs_context = vmufat_init_fs_context
