@@ -93,15 +93,19 @@ struct inode *vmufat_get_inode(struct super_block *sb, long ino)
 	long superblock_bno;
 	struct timespec64 current_time;
 
-	vmudetails = sb->s_fs_info;
 	inode = iget_locked(sb, ino);
-	if (!inode) {
+	if (!inode || !sb) {
+		error = -EIO;
+		goto reterror;
+	}
+	vmudetails = sb->s_fs_info;
+	if (!vmudetails) {
 		error = -EIO;
 		goto reterror;
 	}
 	superblock_bno = vmudetails->sb_bnum;
 
-	if (inode->i_state & I_NEW) {
+	if (inode_state_read_once(inode) & I_NEW) {
 		inode->i_uid = current_fsuid();
 		inode->i_gid = current_fsgid();
 		inode->i_mode &= ~S_IFMT;
@@ -337,10 +341,10 @@ out:
 
 static int check_sb_format(struct buffer_head *bh)
 {
-	return (((u32 *) bh->b_data)[0] == VMUFAT_MAGIC &&
-		((u32 *) bh->b_data)[1] == VMUFAT_MAGIC &&
-		((u32 *) bh->b_data)[2] == VMUFAT_MAGIC &&
-		((u32 *) bh->b_data)[3] == VMUFAT_MAGIC);
+	return (((u32 *) bh->b_data)[0] == VMUFAT_SUPER_MAGIC &&
+		((u32 *) bh->b_data)[1] == VMUFAT_SUPER_MAGIC &&
+		((u32 *) bh->b_data)[2] == VMUFAT_SUPER_MAGIC &&
+		((u32 *) bh->b_data)[3] == VMUFAT_SUPER_MAGIC);
 }
 
 static void vmufat_populate_vmudata(struct memcard *vmudata,
