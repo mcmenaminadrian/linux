@@ -106,7 +106,7 @@ struct vmufat_file_info {
 	char fname[VMUFAT_NAMELEN];
 };
 
-static inline struct buffer_head *vmufat_sb_bread(struct super_block *sb,
+static struct buffer_head *vmufat_sb_bread(struct super_block *sb,
 	sector_t block)
 {
 	if (!sb)
