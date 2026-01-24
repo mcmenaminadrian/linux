@@ -427,7 +427,6 @@ static int vmufat_fill_super(struct super_block *sb, struct fs_context *fc)
 
 	vmufat_populate_vmudata(vmudata, bh, test_sz);
 	mutex_init(&vmudata->mutex);
-	sb->s_fs_info = vmudata;
 
 	root_i = vmufat_get_inode(sb, vmudata->sb_bnum);
 	if (!root_i) {
@@ -472,7 +471,6 @@ static int init_inodecache(void)
 		sizeof(struct vmufat_inode), 0,
 			SLAB_RECLAIM_ACCOUNT, init_once);
 	return vmufat_inode_cachep ? 0 : -ENOMEM;
-
 }
 
 static void destroy_inodecache(void)
@@ -514,15 +512,12 @@ static int vmufat_init_fs_context(struct fs_context *fc)
 	return err;
 }
 
-
-
 static struct file_system_type vmufat_fs_type = {
 	.owner		= THIS_MODULE,
 	.name		= "vmufat",
 	.kill_sb	= kill_block_super,
 	.fs_flags	= FS_REQUIRES_DEV,
-	.init_fs_context = vmufat_init_fs_context
-
+	.init_fs_context = vmufat_init_fs_context,
 };
 
 static int __init init_vmufat_fs(void)
