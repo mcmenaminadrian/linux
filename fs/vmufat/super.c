@@ -390,24 +390,23 @@ out:
 static int vmufat_set_fs_private(struct fs_context *fc)
 {
 	int err = 0;
-	struct memcard *vmudata;
-
-	vmudata = kmalloc(sizeof(struct memcard), GFP_KERNEL);
-	if (!vmudata) {
-		err = -ENOMEM;
-	}
-	fc->s_fs_info = vmudata;
 	return err;
 }
 
 static int vmufat_fill_super(struct super_block *sb, struct fs_context *fc)
 {
 	struct buffer_head *bh = NULL;
-	struct memcard *vmudata = fc->s_fs_info;
+	struct memcard *vmudata;
 	int test_sz;
 	struct inode *root_i;
 	int ret = 0;
 
+	vmudata = kmalloc(sizeof(struct memcard), GFP_KERNEL);
+	if (!vmudata) {
+		ret = -ENOMEM;
+		goto freevmudata_out;
+	}
+	sb->s_fs_info = vmudata;
 	sb_set_blocksize(sb, VMU_BLK_SZ);
 	sb->s_blocksize_bits = ilog2(VMU_BLK_SZ);
 	sb->s_magic = VMUFAT_SUPER_MAGIC;
@@ -432,27 +431,29 @@ static int vmufat_fill_super(struct super_block *sb, struct fs_context *fc)
 	if (!root_i) {
 		printk(KERN_ERR "VMUFAT: get root inode failed\n");
 		ret = -ENOMEM;
-		goto freevmudata_out;
+		goto freebh_out;
 	}
 	if (IS_ERR(root_i)) {
 		printk(KERN_ERR "VMUFAT: get root"
 			" inode failed - error 0x%lX\n",
 			PTR_ERR(root_i));
 		ret = PTR_ERR(root_i);
-		goto freevmudata_out;
+		goto freebh_out;
 	}
 
 	sb->s_root = d_make_root(root_i);
 	if (!sb->s_root) {
 		ret = -EIO;
-		goto freevmudata_out;
+		goto freebh_out;
 	}
 	else 
 		goto out;
 
+freebh_out:
+	brelse(bh);
 freevmudata_out:
 	kfree(vmudata);
-	brelse(bh);
+
 out:
 	return ret;
 }
@@ -495,8 +496,7 @@ static int vmufat_get_tree(struct fs_context *fc)
 
 static void vmufat_free_fc(struct fs_context *fc)
 {
-	struct memcard *vmudata = fc->s_fs_info;
-	kfree(vmudata);
+
 }
 
 static const struct fs_context_operations vmufat_fs_context_ops = {
