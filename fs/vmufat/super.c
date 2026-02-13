@@ -362,7 +362,7 @@ static void vmufat_populate_vmudata(struct memcard *vmudata,
 	/* return the true number of user available blocks - physical VMUs
  	 * return a neat 200 and ignore 40 blocks of usable space -
  	 * we get round that in a hardware neutral way */
-	vmudata->numblocks = vmudata->dir_bnum - vmudata->dir_len + 1;
+	vmudata->numblocks = vmudata->sb_bnum + 1;
 }
 
 static int vmufat_get_size(struct super_block *sb, struct buffer_head **bh)
