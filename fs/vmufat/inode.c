@@ -276,14 +276,16 @@ static void vmufat_save_bcd_rtc(struct rtc_device *rtc, struct inode *in,
 
 	if (rtc_read_time(rtc, &now) < 0)
 		vmufat_save_bcd_nortc(in, bh, index_to_dir);
-	bh[index_to_dir + VMUFAT_DIR_CENT] = bin2bcd((char)(now.tm_year/100));
-	bh[index_to_dir + VMUFAT_DIR_YEAR] = bin2bcd((char)(now.tm_year % 100));
-	bh[index_to_dir + VMUFAT_DIR_MONTH] = bin2bcd((char)(now.tm_mon));
-	bh[index_to_dir + VMUFAT_DIR_DAY] = bin2bcd((char)(now.tm_mday));
-	bh[index_to_dir + VMUFAT_DIR_HOUR] = bin2bcd((char)(now.tm_hour));
-	bh[index_to_dir + VMUFAT_DIR_MIN] = bin2bcd((char)(now.tm_min));
-	bh[index_to_dir + VMUFAT_DIR_SEC] = bin2bcd((char)(now.tm_sec));
-	bh[index_to_dir + VMUFAT_DIR_DOW] = bin2bcd((char)(now.tm_wday));
+	else {
+		bh[index_to_dir + VMUFAT_DIR_CENT] = bin2bcd((char)(now.tm_year/100));
+		bh[index_to_dir + VMUFAT_DIR_YEAR] = bin2bcd((char)(now.tm_year % 100));
+		bh[index_to_dir + VMUFAT_DIR_MONTH] = bin2bcd((char)(now.tm_mon));
+		bh[index_to_dir + VMUFAT_DIR_DAY] = bin2bcd((char)(now.tm_mday));
+		bh[index_to_dir + VMUFAT_DIR_HOUR] = bin2bcd((char)(now.tm_hour));
+		bh[index_to_dir + VMUFAT_DIR_MIN] = bin2bcd((char)(now.tm_min));
+		bh[index_to_dir + VMUFAT_DIR_SEC] = bin2bcd((char)(now.tm_sec));
+		bh[index_to_dir + VMUFAT_DIR_DOW] = bin2bcd((char)(now.tm_wday));
+	}
 }
 
 /*
@@ -474,9 +476,10 @@ static int vmufat_readdir(struct file *filp, struct dir_context *ctx)
 	dentry = filp->f_path.dentry;
 	sb = inode->i_sb;
 	vmudetails = sb->s_fs_info;
-	index = filp->f_pos;
+	index = ctx->pos;
+	//index = filp->f_pos; //change to ctx->pos
 	/* handle . for this directory and .. for parent */
-	switch ((unsigned int) filp->f_pos) {
+	switch ((unsigned int) ctx->pos) {
 	case 0:
 		error = ctx->actor(ctx, ".", 1, index++, inode->i_ino, DT_DIR);
 		if (error < 0)
@@ -532,7 +535,7 @@ static int vmufat_readdir(struct file *filp, struct dir_context *ctx)
 	}
 
 finish:
-	filp->f_pos = index;
+	ctx->pos = index;
 	kfree(saved_file);
 	brelse(bh);
 out:
