@@ -526,9 +526,7 @@ static int vmufat_readdir(struct file *filp, struct dir_context *ctx)
 			memcpy(saved_file->fname,
 				bh->b_data + pos + VMUFAT_NAME_OFFSET,
 				VMUFAT_NAMELEN);
-			filenamelen = strlen(saved_file->fname);
-			if (filenamelen > VMUFAT_NAMELEN)
-				filenamelen = VMUFAT_NAMELEN;
+			filenamelen = strnlen(saved_file->fname, VMUFAT_NAMELEN);
 			error = ctx->actor(ctx, saved_file->fname, filenamelen,
 				index++, saved_file->fblk, DT_REG);
 			if (error < 0)
