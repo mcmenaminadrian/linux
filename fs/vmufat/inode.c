@@ -316,7 +316,7 @@ static int vmufat_allocate_inode(umode_t imode,
 	/* Executable files should be at the start of the volume */
 	if (imode & EXEC) {
 		if (vmufat_get_fat(sb, 0) != VMUFAT_UNALLOCATED) {
-			printk(KERN_WARN "VMUFAT: Warning cannot write excutable "
+			printk(KERN_WARNING "VMUFAT: Warning cannot write excutable "
 				"file to block 0. Volume block 0 already allocated.\n");
 		}
 		else {
