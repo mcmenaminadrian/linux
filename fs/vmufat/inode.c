@@ -223,7 +223,6 @@ static void vmufat_save_bcd_nortc(struct inode *in, char *bh, int index_to_dir)
 	long years, days;
 	unsigned char bcd_century, nl_day, bcd_month;
 	unsigned char u8year;
-	bool century22 = FALSE;
 	time64_t unix_date;
 
 	unix_date = in->i_mtime_sec;
