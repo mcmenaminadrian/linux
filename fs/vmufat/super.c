@@ -34,6 +34,7 @@
 #include "vmufat.h"
 
 static struct kmem_cache *vmufat_inode_cachep;
+struct kmem_cache *vmufat_blist_cachep;
 static const struct super_operations vmufat_super_operations;
 extern int *day_n;
 extern const struct inode_operations vmufat_inode_operations;
@@ -470,14 +471,29 @@ static int init_inodecache(void)
 {
 	vmufat_inode_cachep = kmem_cache_create("vmufat_inode_cache",
 		sizeof(struct vmufat_inode), 0,
-			SLAB_RECLAIM_ACCOUNT, init_once);
-	return vmufat_inode_cachep ? 0 : -ENOMEM;
+		SLAB_RECLAIM_ACCOUNT, init_once);
+	if (!vmufat_inode_cachep) {
+		return -ENOMEM;
+	}
+	rcu_barrier();
+	vmufat_blist_cachep = kmem_cache_create("vmufat_blist_cache",
+		sizeof(struct vmufat_block_list), 0,
+		SLAB_RECLAIM_ACCOUNT, init_once);
+	if (!vmufat_blist_cachep) {
+		rcu_barrier();
+		kmem_cache_destroy(vmufat_inode_cachep);
+		return -ENOMEM;
+	}
+	rcu_barrier();
+	return 0;
 }
 
 static void destroy_inodecache(void)
 {
 	rcu_barrier();
 	kmem_cache_destroy(vmufat_inode_cachep);
+	rcu_barrier();
+	kmem_cache_destroy(vmufat_blist_cachep);
 }
 
 static const struct super_operations vmufat_super_operations = {
