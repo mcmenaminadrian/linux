@@ -37,7 +37,7 @@ const struct inode_operations vmufat_inode_operations;
 const struct file_operations vmufat_file_operations;
 const struct address_space_operations vmufat_address_space_operations;
 const struct file_operations vmufat_file_dir_operations;
-struct kmem_cache *vmufat_blist_cachep;
+extern struct kmem_cache *vmufat_blist_cachep;
 /* Linear day numbers of the respective 1sts in non-leap years. */
 int day_n[] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
 
@@ -223,6 +223,7 @@ static void vmufat_save_bcd_nortc(struct inode *in, char *bh, int index_to_dir)
 	long years, days;
 	unsigned char bcd_century, nl_day, bcd_month;
 	unsigned char u8year;
+	bool century22 = FALSE;
 	time64_t unix_date;
 
 	unix_date = in->i_mtime_sec;
@@ -233,9 +234,13 @@ static void vmufat_save_bcd_nortc(struct inode *in, char *bh, int index_to_dir)
 		years--;
 	/* rebase days to account for leap years */
 	days -= (years + 3) / 4 + DAYS_PER_YEAR * years;
+	// 2100 is not a leap year
+	if (years >= CENTURY22 + 1) {
+		days--;
+	}
 	/* 1 Jan is Day 1 */
 	days++;
-	if (days == (FEB28 + 1) && !(years % 4)) {
+	if (days == (FEB28 + 1) && !(years % 4) && (years != CENTURY22)) {
 		nl_day = days;
 		bcd_month = 2;
 	} else {
@@ -246,13 +251,11 @@ static void vmufat_save_bcd_nortc(struct inode *in, char *bh, int index_to_dir)
 	}
 
 	bcd_century = 19;
-	/* TODO:accounts for 21st century but will fail in 2100
-		because of leap days */
 	if (years > 29)
-		bcd_century += 1 + (years - 30)/100;
+		bcd_century += 1 + (years - CENTURY21)/100;
 
 	bh[index_to_dir + VMUFAT_DIR_CENT] = bin2bcd(bcd_century);
-	u8year = years + 70; /* account for epoch */
+	u8year = years + START_OF_EPOCH; /* account for epoch */
 	if (u8year > 99)
 		u8year = u8year - 100;
 
@@ -274,7 +277,7 @@ static void vmufat_save_bcd_rtc(struct rtc_device *rtc, struct inode *in,
 {
 	struct rtc_time now;
 
-	if (rtc_read_time(rtc, &now) < 0)
+	if (rtc_read_time(rtc, &now))
 		vmufat_save_bcd_nortc(in, bh, index_to_dir);
 	else {
 		bh[index_to_dir + VMUFAT_DIR_CENT] = bin2bcd((char)(now.tm_year/100));
@@ -284,7 +287,8 @@ static void vmufat_save_bcd_rtc(struct rtc_device *rtc, struct inode *in,
 		bh[index_to_dir + VMUFAT_DIR_HOUR] = bin2bcd((char)(now.tm_hour));
 		bh[index_to_dir + VMUFAT_DIR_MIN] = bin2bcd((char)(now.tm_min));
 		bh[index_to_dir + VMUFAT_DIR_SEC] = bin2bcd((char)(now.tm_sec));
-		bh[index_to_dir + VMUFAT_DIR_DOW] = bin2bcd((char)(now.tm_wday));
+		bh[index_to_dir + VMUFAT_DIR_DOW] = bin2bcd((char)((now.tm_wday + 1))
+			% DAYS_PER_WEEK);
 	}
 }
 
@@ -309,21 +313,20 @@ static int vmufat_allocate_inode(umode_t imode,
 		struct super_block *sb, struct inode *in)
 {
 	int error = 0;
-	/* Executable files must be at the start of the volume */
+	/* Executable files should be at the start of the volume */
 	if (imode & EXEC) {
-		in->i_ino = VMUFAT_ZEROBLOCK;
 		if (vmufat_get_fat(sb, 0) != VMUFAT_UNALLOCATED) {
-			printk(KERN_INFO "VMUFAT: cannot write excutable "
-				"file. Volume block 0 already allocated.\n");
-			error = -ENOSPC;
-			goto out;
+			printk(KERN_WARN "VMUFAT: Warning cannot write excutable "
+				"file to block 0. Volume block 0 already allocated.\n");
 		}
-	} else {
-		error = vmufat_find_free(sb);
-		if (error >= 0)
-			in->i_ino = error;
+		else {
+			in->i_ino = VMUFAT_ZEROBLOCK;
+			return error;
+		}
 	}
-out:
+	error = vmufat_find_free(sb);
+	if (error >= 0)
+		in->i_ino = error;
 	return error;
 }
 
@@ -477,7 +480,6 @@ static int vmufat_readdir(struct file *filp, struct dir_context *ctx)
 	sb = inode->i_sb;
 	vmudetails = sb->s_fs_info;
 	index = ctx->pos;
-	//index = filp->f_pos; //change to ctx->pos
 	/* handle . for this directory and .. for parent */
 	switch ((unsigned int) ctx->pos) {
 	case 0:

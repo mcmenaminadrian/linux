@@ -72,7 +72,11 @@ enum vmufat_date {
 #define SECONDS_PER_HOUR		3600
 #define HOURS_PER_DAY			24
 #define SIXTY_MINS_OR_SECS		60
-#define FEB28				59
+#define FEB28					59
+#define DAYS_PER_WEEK			7
+#define START_OF_EPOCH			70
+#define CENTURY21				30
+#define CENTURY22				130
 
 struct memcard {
 	unsigned int sb_bnum;
