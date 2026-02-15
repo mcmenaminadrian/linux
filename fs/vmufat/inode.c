@@ -279,14 +279,15 @@ static void vmufat_save_bcd_rtc(struct rtc_device *rtc, struct inode *in,
 	if (rtc_read_time(rtc, &now))
 		vmufat_save_bcd_nortc(in, bh, index_to_dir);
 	else {
-		bh[index_to_dir + VMUFAT_DIR_CENT] = bin2bcd((char)(now.tm_year/100));
-		bh[index_to_dir + VMUFAT_DIR_YEAR] = bin2bcd((char)(now.tm_year % 100));
-		bh[index_to_dir + VMUFAT_DIR_MONTH] = bin2bcd((char)(now.tm_mon));
+		bh[index_to_dir + VMUFAT_DIR_CENT] = bin2bcd((char)((now.tm_year + 1900)/100));
+		bh[index_to_dir + VMUFAT_DIR_YEAR] =
+			bin2bcd((char)(now.tm_year % 100));
+		bh[index_to_dir + VMUFAT_DIR_MONTH] = bin2bcd((char)(now.tm_mon + 1));
 		bh[index_to_dir + VMUFAT_DIR_DAY] = bin2bcd((char)(now.tm_mday));
 		bh[index_to_dir + VMUFAT_DIR_HOUR] = bin2bcd((char)(now.tm_hour));
 		bh[index_to_dir + VMUFAT_DIR_MIN] = bin2bcd((char)(now.tm_min));
 		bh[index_to_dir + VMUFAT_DIR_SEC] = bin2bcd((char)(now.tm_sec));
-		bh[index_to_dir + VMUFAT_DIR_DOW] = bin2bcd((char)((now.tm_wday + 1))
+		bh[index_to_dir + VMUFAT_DIR_DOW] = bin2bcd((char)((now.tm_wday + 6))
 			% DAYS_PER_WEEK);
 	}
 }
