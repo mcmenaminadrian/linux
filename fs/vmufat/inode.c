@@ -116,42 +116,23 @@ static int vmufat_get_freeblock(int start, int end, struct buffer_head *bh)
 static int vmufat_find_free(struct super_block *sb)
 {
 	struct memcard *vmudetails;
-	int testblk, fatblk, ret;
+	int testblk, fatblk, ret = -1;
 	struct buffer_head *bh_fat;
 
 	vmudetails = sb->s_fs_info;
 
-	for (fatblk = vmudetails->fat_bnum;
-		fatblk > vmudetails->fat_bnum - vmudetails->fat_len;
-		fatblk--) {
-		bh_fat = vmufat_sb_bread(sb, fatblk);
+	fatblk = vmudetails->fat_bnum;
+	for (int i = 0; i < vmudetails->fat_len; i++)
+	{
+		bh_fat = vmufat_sb_bread(sb, fatblk + i);
 		if (!bh_fat) {
 			ret = -EIO;
 			goto fail;
 		}
-
-		/* Handle 256 block VMUs like physical devices
-		 * and other VMUs more simply
-		 */
-		if (vmudetails->sb_bnum != VMU_BLK_SZ16) {
-			/* Cannot be physical VMU */
-			testblk = vmufat_get_freeblock(VMU_BLK_SZ16, 0, bh_fat);
-			put_bh(bh_fat);
-			if (testblk >= 0)
-				goto out_of_loop;
-		} else { /* Physical VMU or logical VMU with same size */
-			testblk = vmufat_get_freeblock(VMUFAT_START_ALLOC, 0,
-				bh_fat);
-			if (testblk >= 0) {
-				put_bh(bh_fat);
-				goto out_of_loop;
-			}
-			/* Only allocate to higher blocks if no space left */
-			testblk = vmufat_get_freeblock(VMU_BLK_SZ16,
-				VMUFAT_START_ALLOC + 1, bh_fat);
-			put_bh(bh_fat);
-			if (testblk > VMUFAT_START_ALLOC)
-				goto out_of_loop;
+		testblk = vmufat_get_freeblock(0, VMU_BLK_SZ16, bh_fat);
+		put_bh(bh_fat);
+		if (testblk >= 0) {
+			goto out_of_loop;
 		}
 	}
 	printk(KERN_INFO "VMUFAT: volume is full\n");
@@ -159,8 +140,7 @@ static int vmufat_find_free(struct super_block *sb)
 	goto fail;
 
 out_of_loop:
-	ret = (fatblk - 1 - vmudetails->fat_bnum + vmudetails->fat_len)
-			* VMU_BLK_SZ16 + testblk;
+	ret = testblk;
 fail:
 	return ret;
 }
@@ -818,17 +798,25 @@ static int vmufat_get_block(struct inode *inode, sector_t iblock,
 	finblk = vblk->bno;
 
 	mutex_lock(&vmudetails->mutex);
-	/* Exec files have to be linear */
+	/* Exec files have to be linear on real VMUs */
+	/* But this is policy so we warn but don't fail */
 	if (inode->i_ino == 0) {
 		exeblk = vmufat_get_fat(sb, finblk + 1);
 		if (exeblk != VMUFAT_UNALLOCATED) {
 			mutex_unlock(&vmudetails->mutex);
 			printk(KERN_WARNING "VMUFAT: Cannot allocate linear "
 				"space needed for executible\n");
-			error = -ENOSPC;
-			goto out;
+			mutex_lock(&vmudetails->mutex);
+			nxtblk = vmufat_find_free(sb);
+			if (nxtblk < 0) {
+				mutex_unlock(&vmudetails->mutex);
+				error = nxtblk;
+				goto out;
+			}
 		}
-		nxtblk = finblk + 1;
+		else {
+			nxtblk = finblk + 1;
+		}
 	} else {
 		nxtblk = vmufat_find_free(sb);
 		if (nxtblk < 0) {
