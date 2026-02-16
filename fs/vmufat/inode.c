@@ -532,7 +532,7 @@ int vmufat_list_blocks(struct inode *in)
 	struct memcard *vmudetails;
 	int error = -EINVAL;
 	struct list_head *iter, *iter2;
-	struct vmufat_block_list *vbl, *nvbl;
+	struct vmufat_blo ck_list *vbl, *nvbl;
 	u16 fatdata;
 
 	vi = VMUFAT_I(in);
