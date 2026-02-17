@@ -547,12 +547,10 @@ int vmufat_list_blocks(struct inode *in)
 		nextblock = 0;
 
 	/* Delete any previous list of blocks */
-	if (!list_empty(vi->blocks.b_list)) {
-		list_for_each_safe(iter, iter2, &vi->blocks.b_list) {
-			vbl = list_entry(iter, struct vmufat_block_list, b_list);
-			list_del(iter);
-			kmem_cache_free(vmufat_blist_cachep, vbl);
-		}
+	list_for_each_safe(iter, iter2, &vi->blocks.b_list) {
+		vbl = list_entry(iter, struct vmufat_block_list, b_list);
+		list_del(iter);
+		kmem_cache_free(vmufat_blist_cachep, vbl);
 	}
 	vi->nblcks = 0;
 	do {
