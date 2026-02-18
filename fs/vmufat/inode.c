@@ -319,7 +319,6 @@ static void vmufat_setup_inode(struct inode *in, struct super_block *sb)
 	in->i_fop = &vmufat_file_operations;
 	in->i_mapping->a_ops = &vmufat_address_space_operations;
 	insert_inode_hash(in);
-	mark_inode_dirty(in);
 }
 
 static void vmu_handle_zeroblock(int recno, struct buffer_head *bh, int ino)
@@ -425,6 +424,7 @@ dir_space_found:
 	if (error)
 		goto clean_fat;
 	mutex_unlock(&vmudetails->mutex);
+	mark_inode_dirty(in);
 	d_instantiate(de, inode);
 	return error;
 
