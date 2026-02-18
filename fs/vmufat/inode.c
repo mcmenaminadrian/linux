@@ -424,7 +424,7 @@ dir_space_found:
 	if (error)
 		goto clean_fat;
 	mutex_unlock(&vmudetails->mutex);
-	mark_inode_dirty(in);
+	mark_inode_dirty(inode);
 	d_instantiate(de, inode);
 	return error;
 
