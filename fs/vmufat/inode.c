@@ -313,18 +313,15 @@ static int vmufat_allocate_inode(umode_t imode,
 static void vmufat_setup_inode(struct inode *in, umode_t imode,
 		struct super_block *sb)
 {
-	struct timespec64 current_time;
-	in->i_uid = current_fsuid();
-	in->i_gid = current_fsgid();
-	ktime_get_coarse_real_ts64(&current_time);
-	in->i_mtime_sec = in->i_atime_sec = in->i_ctime_sec = current_time.tv_sec;
+	simple_inode_init_ts(in);
 	in->i_mode = imode;
 	in->i_blocks = 1;
 	in->i_sb = sb;
-	insert_inode_hash(in);
 	in->i_op = &vmufat_inode_operations;
 	in->i_fop = &vmufat_file_operations;
 	in->i_mapping->a_ops = &vmufat_address_space_operations;
+	insert_inode_hash(in);
+	mark_inode_dirty(in);
 }
 
 static void vmu_handle_zeroblock(int recno, struct buffer_head *bh, int ino)
@@ -379,7 +376,7 @@ static int vmufat_inode_create(struct mnt_idmap *idmap, struct inode *dir,
 	mutex_unlock(&vmudetails->mutex);
 	if (error)
 		goto clean_inode;
-
+	inode_init_owner(&nop_mnt_idmap, in, dir);
 	vmufat_setup_inode(inode, imode, sb);
 
 	/* Write to the directory
