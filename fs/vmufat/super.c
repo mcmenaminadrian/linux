@@ -128,25 +128,21 @@ struct inode *vmufat_get_inode(struct super_block *sb, long ino)
 			inode->i_mode = S_IFREG | S_IRUGO | S_IWUSR;
 
 			/* Scan through the directory to find matching file */
-			for (i = vmudetails->dir_bnum;
-				i > vmudetails->dir_bnum - vmudetails->dir_len;
-				i--) {
+			for (i = 0; i < vmudetails->dir_len; i++) {
 				brelse(bh);
-				bh = vmufat_sb_bread(sb, i);
+				bh = vmufat_sb_bread(sb,
+					vmudetails->dir_bnum - i);
 				if (!bh) {
 					error = -EIO;
 					goto failed;
 				}
 				for (j = 0; j < VMU_DIR_ENTRIES_PER_BLOCK; j++)
 				{
-					if (bh->b_data[j * VMU_DIR_RECORD_LEN]
-						== 0)
-						continue;
-					if (le16_to_cpu(((u16 *) bh->b_data)
-					[j * VMU_DIR_RECORD_LEN16 +
-					VMUFAT_FIRSTBLOCK_OFFSET16]) == ino) {
-						found = 1;
-						goto found;
+					u16 ino_read = le16_to_cpu(((u16 *) bh->b_data)
+						[j * VMU_DIR_RECORD_LEN16 +
+						VMUFAT_FIRSTBLOCK_OFFSET16]);
+					if (ino_read == ino)
+							goto found;
 					}
 				}
 			}
