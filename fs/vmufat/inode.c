@@ -74,7 +74,7 @@ static struct dentry *vmufat_inode_lookup(struct inode *in, struct dentry *dent,
 			dent->d_name.len) == 0) {
 				ino = vmufat_get_inode(sb,
 					le16_to_cpu(((u16 *) bh->b_data)
-					[record_offset
+					[(record_offset / 2)
 					+ VMUFAT_FIRSTBLOCK_OFFSET16]));
 				if (IS_ERR(ino)) {
 					error = PTR_ERR(ino);
