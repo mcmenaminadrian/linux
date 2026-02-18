@@ -314,7 +314,6 @@ static void vmufat_setup_inode(struct inode *in, umode_t imode,
 		struct super_block *sb)
 {
 	simple_inode_init_ts(in);
-	in->i_mode = imode;
 	in->i_blocks = 1;
 	in->i_sb = sb;
 	in->i_op = &vmufat_inode_operations;
@@ -376,7 +375,7 @@ static int vmufat_inode_create(struct mnt_idmap *idmap, struct inode *dir,
 	mutex_unlock(&vmudetails->mutex);
 	if (error)
 		goto clean_inode;
-	inode_init_owner(&nop_mnt_idmap, in, dir);
+	inode_init_owner(&nop_mnt_idmap, in, dir, imode);
 	vmufat_setup_inode(inode, imode, sb);
 
 	/* Write to the directory
