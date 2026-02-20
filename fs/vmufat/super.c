@@ -384,12 +384,6 @@ out:
 	return i;
 }
 
-static int vmufat_set_fs_private(struct fs_context *fc)
-{
-	int err = 0;
-	return err;
-}
-
 static int vmufat_fill_super(struct super_block *sb, struct fs_context *fc)
 {
 	struct buffer_head *bh = NULL;
@@ -501,20 +495,13 @@ static int vmufat_get_tree(struct fs_context *fc)
 	return get_tree_bdev(fc, vmufat_fill_super);
 }
 
-static void vmufat_free_fc(struct fs_context *fc)
-{
-
-}
-
 static const struct fs_context_operations vmufat_fs_context_ops = {
 	.get_tree	= vmufat_get_tree,
-	.free		= vmufat_free_fc,
 };
 
 static int vmufat_init_fs_context(struct fs_context *fc)
 {
 	int err = 0;
-	err = vmufat_set_fs_private(fc);
 	fc->ops = &vmufat_fs_context_ops;
 	return err;
 }
