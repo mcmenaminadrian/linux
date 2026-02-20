@@ -347,7 +347,7 @@ static void vmu_write_name(int recno, struct buffer_head *bh, char *name,
 static int vmufat_inode_create(struct mnt_idmap *idmap, struct inode *dir,
 	struct dentry *de, umode_t imode, bool excl)
 {
-	int i, j, entry, found = 0, error = 0, freeblock;
+	int i, j, entry, error = 0, freeblock;
 	struct inode *inode;
 	struct super_block *sb;
 	struct memcard *vmudetails;
@@ -391,13 +391,11 @@ static int vmufat_inode_create(struct mnt_idmap *idmap, struct inode *dir,
 		for (j = 0; j < VMU_DIR_ENTRIES_PER_BLOCK; j++) {
 			entry = j * VMU_DIR_RECORD_LEN;
 			if (((bh->b_data)[entry]) == 0) {
-				found = 1;
 				goto dir_space_found;
 			}
 		}
 	}
-	if (found == 0)
-		goto clean_fat;
+	goto clean_fat;
 dir_space_found:
 	/* Have the directory entry
 	 * so now update it */
