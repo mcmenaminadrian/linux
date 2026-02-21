@@ -741,7 +741,7 @@ static int vmufat_get_block(struct inode *inode, sector_t iblock,
 	struct buffer_head *bh_result, int create)
 {
 	struct vmufat_inode *vin;
-	struct vmufat_block_list *vlist, *vblk;
+	struct vmufat_block *vlist, *vblk;
 	struct super_block *sb;
 	struct memcard *vmudetails;
 	int cural;
