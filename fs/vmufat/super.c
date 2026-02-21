@@ -64,7 +64,7 @@ static struct inode *vmufat_alloc_inode(struct super_block *sb)
 	if (!vi)
 		return NULL;
 
-	INIT_LIST_HEAD(&vi->blocks.b_list);
+	INIT_LIST_HEAD(&vi->blocks);
 	return &vi->vfs_inode;
 }
 
@@ -72,14 +72,15 @@ static void vmufat_destroy_inode(struct inode *in)
 {
 	struct vmufat_inode *vi;
 	struct vmufat_block_list *vb;
-	struct list_head *iter, *iter2;
+	struct vmufat_block *iter, *iter2;
 	vi = VMUFAT_I(in);
 	if (!vi)
 		return;
 
-	list_for_each_safe(iter, iter2, &vi->blocks.b_list) {
+	list_for_each_entry_safe(iter, iter2, &vi->blocks, b_list) {
 		vb = list_entry(iter, struct vmufat_block_list, b_list);
-		list_del(iter);
+		list_del(iter->b_list);
+		kmem_cache_free(vmufat_blist_cachep, iter)
 	}
 	kmem_cache_free(vmufat_inode_cachep, vi);
 }
