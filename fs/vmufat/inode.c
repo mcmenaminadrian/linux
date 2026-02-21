@@ -760,7 +760,7 @@ static int vmufat_get_block(struct inode *inode, sector_t iblock,
 
 	if (iblock < vin->nblcks) {
 		/* block is already here so read it into the buffer head */
-		list_for_each(iter, &vlist) {
+		list_for_each(iter, vlist) {
 			if (cntdwn-- == 0)
 				break;
 		}
@@ -781,7 +781,7 @@ static int vmufat_get_block(struct inode *inode, sector_t iblock,
 
 	/* if looking for a block that is not current - allocate it */
 	cural = vin->nblcks;
-	list_for_each(iter, &vlist) {
+	list_for_each(iter, vlist) {
 		if (cural-- == 1)
 			break;
 	}
