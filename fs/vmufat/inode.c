@@ -525,7 +525,7 @@ int vmufat_list_blocks(struct inode *in)
 	struct memcard *vmudetails;
 	int error = -EINVAL;
 	struct vmufat_block *iter, *iter2;
-	struct vmufat_block_list *vbl, *nvbl;
+	struct vmufat_block *vbl, *nvbl;
 	u16 fatdata;
 
 	vi = VMUFAT_I(in);
@@ -541,7 +541,7 @@ int vmufat_list_blocks(struct inode *in)
 
 	/* Delete any previous list of blocks */
 	list_for_each_entry_safe(iter, iter2, &vi->blocks, b_list) {
-		list_del(iter->b_list);
+		list_del(&iter->b_list);
 		kmem_cache_free(vmufat_blist_cachep, iter);
 	}
 	vi->nblcks = 0;
@@ -574,7 +574,7 @@ out:
 
 unwind_out:
 	list_for_each_entry_safe(iter, iter2, &vi->blocks, b_list) {
-		list_del(iter->b_list);
+		list_del(&iter->b_list);
 		kmem_cache_free(vmufat_blist_cachep, iter);
 	return error;
 }
