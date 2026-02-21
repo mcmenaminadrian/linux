@@ -576,6 +576,7 @@ unwind_out:
 	list_for_each_entry_safe(iter, iter2, &vi->blocks, b_list) {
 		list_del(&iter->b_list);
 		kmem_cache_free(vmufat_blist_cachep, iter);
+	}
 	return error;
 }
 
