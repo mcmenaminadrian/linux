@@ -508,7 +508,7 @@ static int vmufat_init_fs_context(struct fs_context *fc)
 static struct file_system_type vmufat_fs_type = {
 	.owner		= THIS_MODULE,
 	.name		= "vmufat",
-	.kill_sb	= kill_block_super,
+	//.kill_sb	= kill_block_super,
 	.fs_flags	= FS_REQUIRES_DEV,
 	.init_fs_context = vmufat_init_fs_context,
 };
