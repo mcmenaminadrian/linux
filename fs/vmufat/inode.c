@@ -862,7 +862,7 @@ const struct address_space_operations
 	.read_folio =	vmufat_read_folio,
 	.writepages =	vmufat_writepages,
 	.write_begin =	vmufat_write_begin,
-	.write_end =	generic_write_end,
+//	.write_end =	generic_write_end,
 };
 
 const struct inode_operations vmufat_inode_operations = {
@@ -873,14 +873,14 @@ const struct inode_operations vmufat_inode_operations = {
 
 const struct file_operations vmufat_file_dir_operations = {
 	.owner =	THIS_MODULE,
-	.read =		generic_read_dir,
+//	.read =		generic_read_dir,
 	.iterate_shared =	vmufat_readdir,
-	.fsync =	generic_file_fsync,
+//	.fsync =	generic_file_fsync,
 };
 
 const struct file_operations vmufat_file_operations = {
-	.llseek =	generic_file_llseek,
-	.read_iter =	generic_file_read_iter,
-	.write_iter =	generic_file_write_iter,
-	.fsync =	generic_file_fsync,
+//	.llseek =	generic_file_llseek,
+//	.read_iter =	generic_file_read_iter,
+//	.write_iter =	generic_file_write_iter,
+//	.fsync =	generic_file_fsync,
 };
