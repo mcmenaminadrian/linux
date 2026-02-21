@@ -80,7 +80,7 @@ static void vmufat_destroy_inode(struct inode *in)
 	list_for_each_entry_safe(iter, iter2, &vi->blocks, b_list) {
 		vb = list_entry(iter, struct vmufat_block_list, b_list);
 		list_del(iter->b_list);
-		kmem_cache_free(vmufat_blist_cachep, iter)
+		kmem_cache_free(vmufat_blist_cachep, iter);
 	}
 	kmem_cache_free(vmufat_inode_cachep, vi);
 }
@@ -88,7 +88,7 @@ static void vmufat_destroy_inode(struct inode *in)
 struct inode *vmufat_get_inode(struct super_block *sb, long ino)
 {
 	struct buffer_head *bh = NULL;
-	int error = 0, i, j, found = 0;
+	int error = 0, i, j;
 	int offsetindir;
 	struct inode *inode;
 	struct memcard *vmudetails;
@@ -460,7 +460,7 @@ static void init_once(void *foo)
 
 static int init_inodecache(void)
 {
-	vmufat_blist_cachep = KMEM_CACHE(vmufat_block_list, 0);
+	vmufat_blist_cachep = KMEM_CACHE(vmufat_block, 0);
 	if (!vmufat_blist_cachep) {
 		printk(KERN_EMERG "VMUFAT: Could not create block list cache.\n");
 		return -ENOMEM;
