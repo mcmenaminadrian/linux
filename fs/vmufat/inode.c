@@ -760,11 +760,11 @@ static int vmufat_get_block(struct inode *inode, sector_t iblock,
 
 	if (iblock < vin->nblcks) {
 		/* block is already here so read it into the buffer head */
-		list_for_each(iter, &vlist->b_list) {
+		list_for_each(iter, &vlist->blocks) {
 			if (cntdwn-- == 0)
 				break;
 		}
-		vblk = list_entry(iter, struct vmufat_block_list, b_list);
+		vblk = list_entry(iter, struct vmufat_block, b_list);
 		clear_buffer_new(bh_result);
 		error = 0;
 		phys = vblk->bno;
@@ -781,11 +781,11 @@ static int vmufat_get_block(struct inode *inode, sector_t iblock,
 
 	/* if looking for a block that is not current - allocate it */
 	cural = vin->nblcks;
-	list_for_each(iter, &vlist->b_list) {
+	list_for_each(iter, &vlist->blocks) {
 		if (cural-- == 1)
 			break;
 	}
-	vblk = list_entry(iter, struct vmufat_block_list, b_list);
+	vblk = list_entry(iter, struct vmufat_block, b_list);
 	finblk = vblk->bno;
 
 	mutex_lock(&vmudetails->mutex);
