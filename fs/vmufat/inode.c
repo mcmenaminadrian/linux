@@ -524,7 +524,7 @@ int vmufat_list_blocks(struct inode *in)
 	long ino;
 	struct memcard *vmudetails;
 	int error = -EINVAL;
-	struct vmufat_block_list *iter, *iter2;
+	struct vmufat_block *iter, *iter2;
 	struct vmufat_block_list *vbl, *nvbl;
 	u16 fatdata;
 
@@ -554,7 +554,7 @@ int vmufat_list_blocks(struct inode *in)
 		}
 		INIT_LIST_HEAD(&vbl->b_list);
 		vbl->bno = nextblock;
-		list_add_tail(&vbl->b_list, &vi->blocks.b_list);
+		list_add_tail(&vbl->b_list, &vi->blocks);
 		vi->nblcks++;
 
 		/* Find next block in the FAT - if there is one */
@@ -573,10 +573,9 @@ out:
 	return error;
 
 unwind_out:
-	list_for_each_entry_safe(vbl, nvbl, &vi->blocks.b_list, b_list) {
-		list_del_init(&vbl->b_list);
-		kmem_cache_free(vmufat_blist_cachep, vbl);
-	}
+	list_for_each_entry_safe(iter, iter2, &vi->blocks, b_list) {
+		list_del(iter->b_list);
+		kmem_cache_free(vmufat_blist_cachep, iter);
 	return error;
 }
 

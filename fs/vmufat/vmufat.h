@@ -88,13 +88,13 @@ struct memcard {
 	struct mutex mutex;
 };
 
-struct vmufat_block_list {
+struct vmufat_block {
 	struct list_head b_list;
 	int bno;
 };
 
 struct vmufat_inode {
-	struct vmufat_block_list blocks;
+	struct list_head blocks;
 	unsigned int nblcks;
 	struct inode vfs_inode;
 };
