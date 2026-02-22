@@ -409,7 +409,7 @@ static int vmufat_fill_super(struct super_block *sb, struct fs_context *fc)
 	test_sz = vmufat_get_size(sb, &bh);
 	if (test_sz < VMUFAT_MIN_BLK) {
 		printk(KERN_ERR "VMUFAT: attempted to mount corrupted vmufat "
-			"or non-vmufat violume as vmufat.\n");
+			"or non-vmufat volume as vmufat.\n");
 		ret = test_sz;
 		goto out;
 	}
