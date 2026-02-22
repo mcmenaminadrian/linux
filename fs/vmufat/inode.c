@@ -862,7 +862,7 @@ const struct address_space_operations
 	.read_folio =	vmufat_read_folio,
 	.writepages =	vmufat_writepages,
 	.write_begin =	vmufat_write_begin,
-//	.write_end =	generic_write_end,
+	.write_end =	generic_write_end,
 };
 
 const struct inode_operations vmufat_inode_operations = {
