@@ -458,14 +458,14 @@ static void init_once(void *foo)
 
 static int init_inodecache(void)
 {
-	vmufat_blist_cachep = kmem_cache_create("vmufat_block_cache".
+	vmufat_blist_cachep = kmem_cache_create("vmufat_block_cache",
 		sizeof(struct vmufat_block), 0, SLAB_RECLAIM_ACCOUNT, 0);
 	if (!vmufat_blist_cachep) {
 		printk(KERN_EMERG "VMUFAT: Could not create block list cache.\n");
 		return -ENOMEM;
 	}
 	vmufat_inode_cachep = kmem_cache_create("vmufat_inode_cache",
-		sizeof(vmufat_inode), 0, SLAB_RECLAIM_ACCOUNT, init_once);
+		sizeof(struct vmufat_inode), 0, SLAB_RECLAIM_ACCOUNT, init_once);
 	if (!vmufat_inode_cachep) {
 		printk(KERN_EMERG "VMUFAT: Could not create inode cache.\n");
 		kmem_cache_destroy(vmufat_inode_cachep);
