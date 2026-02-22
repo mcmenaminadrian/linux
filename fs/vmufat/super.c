@@ -458,12 +458,14 @@ static void init_once(void *foo)
 
 static int init_inodecache(void)
 {
-	vmufat_blist_cachep = KMEM_CACHE(vmufat_block, 0);
+	vmufat_blist_cachep = kmem_cache_create("vmufat_block_cache".
+		sizeof(struct vmufat_block), 0, SLAB_RECLAIM_ACCOUNT, 0);
 	if (!vmufat_blist_cachep) {
 		printk(KERN_EMERG "VMUFAT: Could not create block list cache.\n");
 		return -ENOMEM;
 	}
-	vmufat_inode_cachep = KMEM_CACHE(vmufat_inode, 0);
+	vmufat_inode_cachep = kmem_cache_create("vmufat_inode_cache",
+		sizeof(vmufat_inode), 0, SLAB_RECLAIM_ACCOUNT, init_once);
 	if (!vmufat_inode_cachep) {
 		printk(KERN_EMERG "VMUFAT: Could not create inode cache.\n");
 		kmem_cache_destroy(vmufat_inode_cachep);
@@ -508,7 +510,7 @@ static int vmufat_init_fs_context(struct fs_context *fc)
 static struct file_system_type vmufat_fs_type = {
 	.owner		= THIS_MODULE,
 	.name		= "vmufat",
-	//.kill_sb	= kill_block_super,
+	.kill_sb	= kill_block_super,
 	.fs_flags	= FS_REQUIRES_DEV,
 	.init_fs_context = vmufat_init_fs_context,
 };
