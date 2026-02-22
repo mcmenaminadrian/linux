@@ -100,7 +100,7 @@ static int vmufat_get_freeblock(int start, int end, struct buffer_head *bh)
 	int i, ret = -1;
 	__le16 fatdata;
 
-	for (i = start; i >= end; i--) {
+	for (i = start; i < end; i++) {
 		fatdata = le16_to_cpu(((u16 *)bh->b_data)[i]);
 		if (fatdata == VMUFAT_UNALLOCATED) {
 			ret = i;
