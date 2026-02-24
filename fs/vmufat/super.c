@@ -145,7 +145,6 @@ struct inode *vmufat_get_inode(struct super_block *sb, long ino)
 					}
 				}
 			}
-notfound:
 			error = -ENOENT;
 			goto failed;
 found:
