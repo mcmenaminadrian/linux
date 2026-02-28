@@ -305,8 +305,11 @@ static int vmufat_allocate_inode(umode_t imode,
 		}
 	}
 	error = vmufat_find_free(sb);
-	if (error >= 0)
+	if (error == 0) {
+		in->i_ino = VMUFAT_ZEROBLOCK;
+	} else if (error > 0) {
 		in->i_ino = error;
+	}
 	return error;
 }
 

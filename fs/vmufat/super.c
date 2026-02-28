@@ -226,12 +226,12 @@ static int vmufat_statfs(struct dentry *dentry, struct kstatfs *kstatbuf)
 
 	sb = dentry->d_sb;
 	error = vmufat_count_freeblocks(sb, kstatbuf);
-	if (error)
-		goto out;
-	kstatbuf->f_type = VMUFAT_SUPER_MAGIC;
-	kstatbuf->f_bsize = sb->s_blocksize;
-	kstatbuf->f_namelen = VMUFAT_NAMELEN;
-out:
+	if (!error)
+	{
+		kstatbuf->f_type = VMUFAT_SUPER_MAGIC;
+		kstatbuf->f_bsize = sb->s_blocksize;
+		kstatbuf->f_namelen = VMUFAT_NAMELEN;
+	}
 	return error;
 }
 
@@ -390,7 +390,7 @@ static int vmufat_fill_super(struct super_block *sb, struct fs_context *fc)
 	struct inode *root_i;
 	int ret = 0;
 
-	vmudata = kmalloc(sizeof(struct memcard), GFP_KERNEL);
+	vmudata = kzalloc(sizeof(struct memcard), GFP_KERNEL);
 	if (!vmudata) {
 		ret = -ENOMEM;
 		goto freevmudata_out;
