@@ -233,7 +233,7 @@ static int vmufat_count_files(struct super_block *sb)
 	if (!vmudetails) {
 		return error;
 	}
-	for (i = vmudetails->dir_bnum;
+	for (int i = vmudetails->dir_bnum;
 		i > vmudetails->dir_bnum - vmudetails->dir_len; i--) {
 		brelse(bh);
 		bh = vmufat_sb_bread(sb, i);
@@ -241,7 +241,7 @@ static int vmufat_count_files(struct super_block *sb)
 			error = -EIO;
 			return error;
 		}
-		for (j = 0; j < VMU_DIR_ENTRIES_PER_BLOCK; j++) {
+		for (int j = 0; j < VMU_DIR_ENTRIES_PER_BLOCK; j++) {
 			int record_offset = j * VMU_DIR_RECORD_LEN;
 			if (bh->b_data[record_offset] != 0) {
 				files_found++;
@@ -267,11 +267,7 @@ static int vmufat_count_file_space(struct super_block *sb)
 	if (!vmudetails) {
 		return error;
 	}
-	free_blocks = vmufat_count_freeblocks();
-	if (free_blocks <= 0) {
-		return free_blocks;
-	}
-	for (i = vmudetails->dir_bnum;
+	for (int i = vmudetails->dir_bnum;
 		i > vmudetails->dir_bnum - vmudetails->dir_len; i--) {
 		brelse(bh);
 		bh = vmufat_sb_bread(sb, i);
@@ -279,7 +275,7 @@ static int vmufat_count_file_space(struct super_block *sb)
 			error = -EIO;
 			return error;
 		}
-		for (j = 0; j < VMU_DIR_ENTRIES_PER_BLOCK; j++) {
+		for (int j = 0; j < VMU_DIR_ENTRIES_PER_BLOCK; j++) {
 			int record_offset = j * VMU_DIR_RECORD_LEN;
 			if (bh->b_data[record_offset] == 0) {
 				files_available++;
