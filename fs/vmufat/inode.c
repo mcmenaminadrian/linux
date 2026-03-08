@@ -70,8 +70,8 @@ static struct dentry *vmufat_inode_lookup(struct inode *in, struct dentry *dent,
 			if (bh->b_data[record_offset] == 0)
 				goto insert_negative;
 			if (memcmp(dent->d_name.name,
-			bh->b_data + record_offset + VMUFAT_NAME_OFFSET,
-			dent->d_name.len) == 0) {
+				bh->b_data + record_offset + VMUFAT_NAME_OFFSET,
+				dent->d_name.len) == 0) {
 				ino = vmufat_get_inode(sb,
 					le16_to_cpu(((u16 *) bh->b_data)
 					[(record_offset / 2)
@@ -196,7 +196,6 @@ static int vmufat_set_fat(struct super_block *sb, long block,
 out:
 	return error;
 }
-
 
 static void vmufat_save_bcd_nortc(struct inode *in, char *bh, int index_to_dir)
 {

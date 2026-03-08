@@ -219,6 +219,76 @@ static int vmufat_count_freeblocks(struct super_block *sb,
 	return error;
 }
 
+static int vmufat_count_files(struct super_block *sb)
+{
+	int error = -1;
+	int files_found = 0;
+	struct buffer_head *bh = NULL;
+	struct memcard *vmudetails;
+	// get directory
+	if (!sb) {
+		return error;
+	}
+	vmudetails = sb->s_fs_info;
+	if (!vmudetails) {
+		return error;
+	}
+	for (i = vmudetails->dir_bnum;
+		i > vmudetails->dir_bnum - vmudetails->dir_len; i--) {
+		brelse(bh);
+		bh = vmufat_sb_bread(sb, i);
+		if (!bh) {
+			error = -EIO;
+			return error;
+		}
+		for (j = 0; j < VMU_DIR_ENTRIES_PER_BLOCK; j++) {
+			int record_offset = j * VMU_DIR_RECORD_LEN;
+			if (bh->b_data[record_offset] != 0) {
+				files_found++;
+			}
+		}
+	}
+	return files_found;
+}
+
+
+static int vmufat_count_file_space(struct super_block *sb)
+{
+	int error = -1;
+	int files_available = 0;
+	int free_blocks;
+	struct buffer_head *bh = NULL;
+	struct memcard *vmudetails;
+	// get directory
+	if (!sb) {
+		return error;
+	}
+	vmudetails = sb->s_fs_info;
+	if (!vmudetails) {
+		return error;
+	}
+	free_blocks = vmufat_count_freeblocks();
+	if (free_blocks <= 0) {
+		return free_blocks;
+	}
+	for (i = vmudetails->dir_bnum;
+		i > vmudetails->dir_bnum - vmudetails->dir_len; i--) {
+		brelse(bh);
+		bh = vmufat_sb_bread(sb, i);
+		if (!bh) {
+			error = -EIO;
+			return error;
+		}
+		for (j = 0; j < VMU_DIR_ENTRIES_PER_BLOCK; j++) {
+			int record_offset = j * VMU_DIR_RECORD_LEN;
+			if (bh->b_data[record_offset] == 0) {
+				files_available++;
+			}
+		}
+	}
+	return files_available;
+}
+
 static int vmufat_statfs(struct dentry *dentry, struct kstatfs *kstatbuf)
 {
 	int error;
@@ -231,6 +301,11 @@ static int vmufat_statfs(struct dentry *dentry, struct kstatfs *kstatbuf)
 		kstatbuf->f_type = VMUFAT_SUPER_MAGIC;
 		kstatbuf->f_bsize = sb->s_blocksize;
 		kstatbuf->f_namelen = VMUFAT_NAMELEN;
+		kstatbuf->f_files = vmufat_count_files(sb);
+		kstatbuf->f_ffree = vmufat_count_file_space(sb);
+		if (kstatbuf->f_ffree > kstatbuf->f_bfree) {
+			kstatbuf->f_ffree = kstatbuf->f_bfree;
+		}
 	}
 	return error;
 }
