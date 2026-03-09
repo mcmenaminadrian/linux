@@ -256,7 +256,6 @@ static int vmufat_count_file_space(struct super_block *sb)
 {
 	int error = -1;
 	int files_available = 0;
-	int free_blocks;
 	struct buffer_head *bh = NULL;
 	struct memcard *vmudetails;
 	// get directory
