@@ -862,7 +862,7 @@ static int vmufat_getattr(struct mnt_idmap *idmap, const struct path *path,
 	struct kstat *stat, u32 request_mask, unsigned int query_flags)
 {
 	struct inode *inode = d_inode(path->dentry);
-	struct vmufat_inode = VMUFAT_I(inode);
+	struct vmufat_inode *vnode = VMUFAT_I(inode);
 	generic_fillattr(&nop_mnt_idmap, request_mask, inode, stat);
 	return 0;
 }
