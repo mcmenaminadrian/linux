@@ -858,6 +858,15 @@ static int vmufat_read_folio(struct file *file, struct folio *folio)
 	return block_read_full_folio(folio, vmufat_get_block);
 }
 
+static int vmufat_getattr(struct mnt_idmap *idmap, const struct path *path,
+	struct kstat *stat, u32 request_mask, unsigned int query_flags)
+{
+	struct inode *inode = d_inode(path->dentry);
+	struct vmufat_inode = VMUFAT_I(inode);
+	generic_fillattr(&nop_mnt_idmap, request_mask, inode, stat);
+	return 0;
+}
+
 const struct address_space_operations
 		vmufat_address_space_operations = {
 	.read_folio =	vmufat_read_folio,
@@ -870,6 +879,7 @@ const struct inode_operations vmufat_inode_operations = {
 	.lookup =	vmufat_inode_lookup,
 	.create =	vmufat_inode_create,
 	.unlink =	vmufat_unlink,
+	.getattr =	vmufat_getattr,
 };
 
 const struct file_operations vmufat_file_dir_operations = {
