@@ -459,11 +459,13 @@ static int vmufat_readdir(struct file *filp, struct dir_context *ctx)
 	switch ((unsigned int) ctx->pos) {
 	case 0:
 		error = ctx->actor(ctx, ".", 1, index++, inode->i_ino, DT_DIR);
+		ctx->pos++;
 		if (error < 0)
 			goto out;
 	case 1:
 		error = ctx->actor(ctx, "..", 2, index++,
 			    dentry->d_parent->d_inode->i_ino, DT_DIR);
+		ctx->pos++;
 		if (error < 0)
 			goto out;
 	default:
@@ -504,6 +506,7 @@ static int vmufat_readdir(struct file *filp, struct dir_context *ctx)
 			filenamelen = strnlen(saved_file->fname, VMUFAT_NAMELEN);
 			error = ctx->actor(ctx, saved_file->fname, filenamelen,
 				index++, saved_file->fblk, DT_REG);
+			ctx->pos++;
 			if (error < 0)
 				goto finish;
 		}
