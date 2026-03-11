@@ -890,6 +890,7 @@ const struct file_operations vmufat_file_dir_operations = {
 	.read =		generic_read_dir,
 	.iterate_shared =	vmufat_readdir,
 	.fsync =	generic_file_fsync,
+	.llseek =	generic_file_llseek,
 };
 
 const struct file_operations vmufat_file_operations = {
