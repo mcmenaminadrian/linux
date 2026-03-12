@@ -219,7 +219,7 @@ static int vmufat_count_freeblocks(struct super_block *sb,
 	return error;
 }
 
-static int vmufat_count_files(struct super_block *sb)
+int vmufat_count_files(struct super_block *sb)
 {
 	int error = -1;
 	int files_found = 0;

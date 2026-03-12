@@ -38,6 +38,7 @@ const struct file_operations vmufat_file_operations;
 const struct address_space_operations vmufat_address_space_operations;
 const struct file_operations vmufat_file_dir_operations;
 extern struct kmem_cache *vmufat_blist_cachep;
+extern int vmufat_count_files(struct super_block *sb);
 /* Linear day numbers of the respective 1sts in non-leap years. */
 int day_n[] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
 
@@ -875,6 +876,7 @@ static int vmufat_getattr(struct mnt_idmap *idmap, const struct path *path,
 		if (vmudetails && vmudetails->sb_bnum == inode->i_ino) {
 			stat->size = (vmudetails->fat_len + vmudetails->dir_len + 1) * 
 				VMU_BLK_SZ;
+			stat->nlink = vmufat_count_files(sb) + 2;
 		}
 	}
 	return 0;
