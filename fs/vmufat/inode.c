@@ -864,9 +864,19 @@ static int vmufat_read_folio(struct file *file, struct folio *folio)
 static int vmufat_getattr(struct mnt_idmap *idmap, const struct path *path,
 	struct kstat *stat, u32 request_mask, unsigned int query_flags)
 {
+	struct super_block *sb;
+	struct memcard vmudetails;
 	struct inode *inode = d_inode(path->dentry);
-	struct vmufat_inode *vnode = VMUFAT_I(inode);
 	generic_fillattr(&nop_mnt_idmap, request_mask, inode, stat);
+	/* correct for superblock to give directory size as one */
+	sb = inode->i_sb;
+	if (sb) {
+		vmudetails = sb->s_fs_info;
+		if (vmudetails && vmudetails->sb_bnum == inode->i_ino) {
+			stat->size = (vmudetails->fat_len + vmudetails->dir_len + 1) * 
+				VMU_BLK_SZ;
+		}
+	}
 	return 0;
 }
 
