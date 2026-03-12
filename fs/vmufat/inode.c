@@ -865,10 +865,10 @@ static int vmufat_getattr(struct mnt_idmap *idmap, const struct path *path,
 	struct kstat *stat, u32 request_mask, unsigned int query_flags)
 {
 	struct super_block *sb;
-	struct memcard vmudetails;
+	struct memcard *vmudetails;
 	struct inode *inode = d_inode(path->dentry);
 	generic_fillattr(&nop_mnt_idmap, request_mask, inode, stat);
-	/* correct for superblock to give directory size as one */
+	/* correct for superblock to give directory size as all metadata combined */
 	sb = inode->i_sb;
 	if (sb) {
 		vmudetails = sb->s_fs_info;
