@@ -94,7 +94,7 @@ struct inode *vmufat_get_inode(struct super_block *sb, long ino)
 	struct timespec64 current_time;
 
 	inode = iget_locked(sb, ino);
-	if (!inode || !sb) {
+	if (!inode) {
 		error = -EIO;
 		goto reterror;
 	}
@@ -153,27 +153,23 @@ found:
 			inode->i_ctime_sec = inode->i_mtime_sec =
 				vmufat_get_date(bh,
 					offsetindir + VMUFAT_FILE_DATEOFFSET);
-
 			/* Execute if a game, write if not copy protected */
 			inode->i_mode &= ~(S_IWUGO | S_IXUGO);
 			inode->i_mode |= S_IRUGO;
-
 			/* Mode - is it write protected? */
 			if ((((u8 *) bh->b_data)[0x01 + offsetindir] ==
-			     0x00) & ~(sb->s_flags & SB_RDONLY))
+			     0x00) & ~(sb->s_flags & SB_RDONLY)) {
 				inode->i_mode |= S_IWUSR;
+			}
 			/* Is file executible - ie a game */
 			if ((((u8 *) bh->b_data)[offsetindir] ==
-			     0xcc) & ~(sb->s_flags & SB_NOEXEC))
+			     0xcc) & ~(sb->s_flags & SB_NOEXEC)) {
 				inode->i_mode |= S_IXUSR;
-
-			inode->i_fop = &vmufat_file_operations;
-
+			}
 			inode->i_blocks =
 			    le16_to_cpu(((u16 *) bh->b_data)
 				[offsetindir / 2 + 0x0C]);
 			inode->i_size = inode->i_blocks * sb->s_blocksize;
-
 			inode->i_mapping->a_ops =
 				&vmufat_address_space_operations;
 			inode->i_op = &vmufat_inode_operations;
@@ -225,9 +221,6 @@ int vmufat_count_files(struct super_block *sb)
 	struct buffer_head *bh = NULL;
 	struct memcard *vmudetails;
 	// get directory
-	if (!sb) {
-		return error;
-	}
 	vmudetails = sb->s_fs_info;
 	if (!vmudetails) {
 		return error;
@@ -249,7 +242,6 @@ int vmufat_count_files(struct super_block *sb)
 	}
 	return files_found;
 }
-
 
 static int vmufat_count_file_space(struct super_block *sb)
 {
@@ -368,7 +360,6 @@ found:
 		error = -EIO;
 		goto out;
 	}
-
 	/* Have the directory entry
 	 * so now update it */
 	if (inode_num != 0)
@@ -378,12 +369,10 @@ found:
 	if (bh->b_data[pos + 1] !=  0 && bh->b_data[pos + 1] != (char) 0xff)
 		bh->b_data[pos + 1] = 0;
 	((u16 *) bh->b_data)[pos16 + 1] = cpu_to_le16(inode_num);
-
 	/* BCD timestamp it */
 	ktime_get_coarse_real_ts64(&current_time);
 	in->i_mtime_sec = current_time.tv_sec;
 	vmufat_save_bcd(in, bh->b_data, pos);
-
 	((u16 *) bh->b_data)[pos16 + VMUFAT_SIZE_OFFSET16] =
 		cpu_to_le16(in->i_blocks);
 	if (inode_num != 0)
@@ -427,7 +416,6 @@ static void vmufat_populate_vmudata(struct memcard *vmudata,
 static int vmufat_get_size(struct super_block *sb, struct buffer_head **bh)
 {
 	int i;
-
 	for (i = VMUFAT_MIN_BLK; i <= VMUFAT_MAX_BLK; i = i * 2) {
 		brelse(*bh);
 		*bh = vmufat_sb_bread(sb, i - 1);
@@ -584,7 +572,7 @@ static int __init init_vmufat_fs(void)
 	if (err)
 		return err;
 	else
-		register_filesystem(&vmufat_fs_type);
+		return register_filesystem(&vmufat_fs_type);
 }
 
 static void __exit exit_vmufat_fs(void)

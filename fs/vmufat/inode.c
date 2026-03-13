@@ -38,7 +38,6 @@ const struct file_operations vmufat_file_operations;
 const struct address_space_operations vmufat_address_space_operations;
 const struct file_operations vmufat_file_dir_operations;
 extern struct kmem_cache *vmufat_blist_cachep;
-extern int vmufat_count_files(struct super_block *sb);
 /* Linear day numbers of the respective 1sts in non-leap years. */
 int day_n[] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
 
@@ -296,6 +295,7 @@ static int vmufat_allocate_inode(umode_t imode,
 	/* Executable files should be at the start of the volume */
 	if (imode & EXEC) {
 		if (vmufat_get_fat(sb, 0) != VMUFAT_UNALLOCATED) {
+			/* Warning for anyone concerned about playable games */
 			printk(KERN_WARNING "VMUFAT: Warning cannot write excutable "
 				"file to block 0. Volume block 0 already allocated.\n");
 		}
@@ -436,7 +436,7 @@ clean_inode:
 	iput(inode);
 out:
 	if (error < 0)
-		printk(KERN_INFO "VMUFAT: inode creation fails with error"
+		printk(KERN_ERR "VMUFAT: inode creation fails with error"
 			" %i\n", error);
 	return error;
 }
