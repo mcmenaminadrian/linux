@@ -117,4 +117,6 @@ static struct buffer_head *vmufat_sb_bread(struct super_block *sb,
 		return NULL;
 	return sb_bread(sb, block);
 }
+
+int vmufat_count_files(struct super_block *sb);
 #endif
