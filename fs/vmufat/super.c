@@ -202,10 +202,10 @@ static void vmufat_put_super(struct super_block *sb)
 	kfree(sb->s_fs_info);
 }
 
-static int vmufat_count_freeblocks(struct super_block *sb,
+static void vmufat_count_freeblocks(struct super_block *sb,
 					struct kstatfs *kstatbuf)
 {
-	int i, free = 0, error = 0;
+	int i, free = 0;
 	struct memcard *vmudetails = sb->s_fs_info;
 
 	/* Look through the FAT */
@@ -216,7 +216,6 @@ static int vmufat_count_freeblocks(struct super_block *sb,
 	kstatbuf->f_bfree = free;
 	kstatbuf->f_bavail = free;
 	kstatbuf->f_blocks = vmudetails->numblocks;
-	return error;
 }
 
 int vmufat_count_files(struct super_block *sb)
@@ -286,23 +285,18 @@ static int vmufat_count_file_space(struct super_block *sb)
 
 static int vmufat_statfs(struct dentry *dentry, struct kstatfs *kstatbuf)
 {
-	int error;
 	struct super_block *sb;
-
 	sb = dentry->d_sb;
-	error = vmufat_count_freeblocks(sb, kstatbuf);
-	if (!error)
-	{
-		kstatbuf->f_type = VMUFAT_SUPER_MAGIC;
-		kstatbuf->f_bsize = sb->s_blocksize;
-		kstatbuf->f_namelen = VMUFAT_NAMELEN;
-		kstatbuf->f_files = vmufat_count_files(sb);
-		kstatbuf->f_ffree = vmufat_count_file_space(sb);
-		if (kstatbuf->f_ffree > kstatbuf->f_bfree) {
-			kstatbuf->f_ffree = kstatbuf->f_bfree;
-		}
+	vmufat_count_freeblocks(sb, kstatbuf);
+	kstatbuf->f_type = VMUFAT_SUPER_MAGIC;
+	kstatbuf->f_bsize = sb->s_blocksize;
+	kstatbuf->f_namelen = VMUFAT_NAMELEN;
+	kstatbuf->f_files = vmufat_count_files(sb);
+	kstatbuf->f_ffree = vmufat_count_file_space(sb);
+	if (kstatbuf->f_ffree > kstatbuf->f_bfree) {
+		kstatbuf->f_ffree = kstatbuf->f_bfree;
 	}
-	return error;
+	return 0;
 }
 
 /* Remove inode from memory */
@@ -530,13 +524,13 @@ static int init_inodecache(void)
 	vmufat_blist_cachep = kmem_cache_create("vmufat_block_cache",
 		sizeof(struct vmufat_block), 0, SLAB_RECLAIM_ACCOUNT, 0);
 	if (!vmufat_blist_cachep) {
-		printk(KERN_EMERG "VMUFAT: Could not create block list cache.\n");
+		printk(KERN_CRIT "VMUFAT: Could not create block list cache.\n");
 		return -ENOMEM;
 	}
 	vmufat_inode_cachep = kmem_cache_create("vmufat_inode_cache",
 		sizeof(struct vmufat_inode), 0, SLAB_RECLAIM_ACCOUNT, init_once);
 	if (!vmufat_inode_cachep) {
-		printk(KERN_EMERG "VMUFAT: Could not create inode cache.\n");
+		printk(KERN_CRIT "VMUFAT: Could not create inode cache.\n");
 		kmem_cache_destroy(vmufat_inode_cachep);
 		return -ENOMEM;
 	}
@@ -557,7 +551,7 @@ static const struct super_operations vmufat_super_operations = {
 	.write_inode =		vmufat_write_inode,
 	.evict_inode =		vmufat_evict_inode,
 	.put_super =		vmufat_put_super,
-	.statfs =		vmufat_statfs,
+	.statfs =			vmufat_statfs,
 };
 
 static int vmufat_get_tree(struct fs_context *fc)
@@ -571,17 +565,16 @@ static const struct fs_context_operations vmufat_fs_context_ops = {
 
 static int vmufat_init_fs_context(struct fs_context *fc)
 {
-	int err = 0;
 	fc->ops = &vmufat_fs_context_ops;
-	return err;
+	return 0;
 }
 
 static struct file_system_type vmufat_fs_type = {
-	.owner		= THIS_MODULE,
-	.name		= "vmufat",
-	.kill_sb	= kill_block_super,
-	.fs_flags	= FS_REQUIRES_DEV,
-	.init_fs_context = vmufat_init_fs_context,
+	.owner =			THIS_MODULE,
+	.name = 			"vmufat",
+	.kill_sb = 			kill_block_super,
+	.fs_flags = 		FS_REQUIRES_DEV,
+	.init_fs_context =	vmufat_init_fs_context,
 };
 
 static int __init init_vmufat_fs(void)
@@ -590,7 +583,8 @@ static int __init init_vmufat_fs(void)
 	err = init_inodecache();
 	if (err)
 		return err;
-	return register_filesystem(&vmufat_fs_type);
+	else
+		register_filesystem(&vmufat_fs_type);
 }
 
 static void __exit exit_vmufat_fs(void)
