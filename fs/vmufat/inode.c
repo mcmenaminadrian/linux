@@ -745,15 +745,15 @@ static int vmufat_unlink(struct inode *dir, struct dentry *dentry)
 }
 
 /* Update the directory record */
-static int vmufat_increment_filesize(struct *inode)
+static int vmufat_increment_filesize(struct inode *inode)
 {
 	struct superblock *sb = inode->i_sb;
 	struct buffer_head *bh = NULL;
-	struct memcard vmudetails = sb->s_fs_info;
+	struct memcard *vmudetails = sb->s_fs_info;
 	unsigned long ino_num = inode->i_ino;
 	int error = 0;
 
-	if (ino_num = VMUZEROBLOCK) {
+	if (ino_num = VMUFAT_ZEROBLOCK) {
 		ino_num = 0;
 	}
 
@@ -764,7 +764,7 @@ static int vmufat_increment_filesize(struct *inode)
 			error = -EIO;
 			return error;
 		}
-		for (int j = 0; j < VMU_ENTRIES_PER_BLOCK; j++) {
+		for (int j = 0; j < VMU_DIR_ENTRIES_PER_BLOCK; j++) {
 			int record_offset = j * VMU_DIR_RECORD_LEN;
 			if (bh->b_data[record_offset] == 0) {
 				continue;
@@ -777,7 +777,7 @@ static int vmufat_increment_filesize(struct *inode)
 			int current_count = le16_to_cpu(((u16 *) bh->b_data)
 				[j * VMU_DIR_RECORD_LEN16 + VMUFAT_SIZE_OFFSET16]);
 			current_count++;
-			((u16 *) bh_>b_data)
+			((u16 *) bh->b_data)
 				[j * VMU_DIR_RECORD_LEN16 + VMUFAT_SIZE_OFFSET16] =
 				cpu_to_le16(current_count);
 			mark_buffer_dirty(bh);
