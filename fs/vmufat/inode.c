@@ -747,13 +747,13 @@ static int vmufat_unlink(struct inode *dir, struct dentry *dentry)
 /* Update the directory record */
 static int vmufat_increment_filesize(struct inode *inode)
 {
-	struct superblock *sb = inode->i_sb;
+	struct super_block *sb = inode->i_sb;
 	struct buffer_head *bh = NULL;
 	struct memcard *vmudetails = sb->s_fs_info;
 	unsigned long ino_num = inode->i_ino;
 	int error = 0;
 
-	if (ino_num = VMUFAT_ZEROBLOCK) {
+	if (ino_num == VMUFAT_ZEROBLOCK) {
 		ino_num = 0;
 	}
 
