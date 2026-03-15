@@ -774,7 +774,7 @@ static int vmufat_increment_filesize(struct *inode)
 				VMUFAT_FIRSTBLOCK_OFFSET16]) != ino_num) {
 					continue;
 			}
-			int current_count = le16_to_cpu(((u16 *) bh_>b_data)
+			int current_count = le16_to_cpu(((u16 *) bh->b_data)
 				[j * VMU_DIR_RECORD_LEN16 + VMUFAT_SIZE_OFFSET16]);
 			current_count++;
 			((u16 *) bh_>b_data)
