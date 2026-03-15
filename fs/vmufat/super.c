@@ -578,6 +578,7 @@ static int __init init_vmufat_fs(void)
 static void __exit exit_vmufat_fs(void)
 {
 	destroy_inodecache();
+	rcu_barrier();
 	unregister_filesystem(&vmufat_fs_type);
 }
 
