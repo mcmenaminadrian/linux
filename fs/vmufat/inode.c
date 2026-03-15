@@ -184,8 +184,8 @@ static int vmufat_set_fat(struct super_block *sb, long block,
 		error = -EINVAL;
 		goto out;
 	}
-	bh = vmufat_sb_bread(sb, offset + 1 +
-		vmudetails->fat_bnum - vmudetails->fat_len);
+	bh = vmufat_sb_bread(sb, offset + (1 +
+		vmudetails->fat_bnum - vmudetails->fat_len));
 	if (!bh) {
 		error = -EIO;
 		goto out;
@@ -292,7 +292,7 @@ static int vmufat_allocate_inode(umode_t imode,
 		struct super_block *sb, struct inode *in)
 {
 	int error = 0;
-	/* Executable files should be at the start of the volume */
+	/* Executable files should be at the start of the volume if possible */
 	if (imode & EXEC) {
 		if (vmufat_get_fat(sb, 0) != VMUFAT_UNALLOCATED) {
 			/* Warning for anyone concerned about playable games */
@@ -595,6 +595,7 @@ static int vmufat_clean_fat(struct super_block *sb, int inum)
 		fatword = vmufat_get_fat(sb, nextword);
 		if (fatword == VMUFAT_ERROR) {
 			error = -EIO;
+			printk(KERN_ERR "VMUFAT: Failure while cleaning FAT.\n");
 			break;
 		}
 		error = vmufat_set_fat(sb, nextword, VMUFAT_UNALLOCATED);
@@ -743,6 +744,51 @@ static int vmufat_unlink(struct inode *dir, struct dentry *dentry)
 	return 0;
 }
 
+/* Update the directory record */
+static int vmufat_increment_filesize(struct *inode)
+{
+	struct superblock *sb = inode->i_sb;
+	struct buffer_head *bh = NULL;
+	struct memcard vmudetails = sb->s_fs_info;
+	unsigned long ino_num = inode->i_ino;
+	int error = 0;
+
+	if (ino_num = VMUZEROBLOCK) {
+		ino_num = 0;
+	}
+
+	for (int i = vmudetails->dir_bnum; i > vmudetails->dir_bnum - vmudetails->dir_len; i--) {
+		brelse(bh);
+		bh = vmufat_sb_bread(sb, i);
+		if (!bh) {
+			error = -EIO;
+			return error;
+		}
+		for (int j = 0; j < VMU_ENTRIES_PER_BLOCK; j++) {
+			int record_offset = j * VMU_DIR_RECORD_LEN;
+			if (bh->b_data[record_offset] == 0) {
+				continue;
+			}
+			if (le16_to_cpu(((u16 *) bh->b_data)
+				[j * VMU_DIR_RECORD_LEN16 +
+				VMUFAT_FIRSTBLOCK_OFFSET16]) != ino_num) {
+					continue;
+			}
+			int current_count = le16_to_cpu(((u16 *) bh_>b_data)
+				[j * VMU_DIR_RECORD_LEN16 + VMUFAT_SIZE_OFFSET16]);
+			current_count++;
+			((u16 *) bh_>b_data)
+				[j * VMU_DIR_RECORD_LEN16 + VMUFAT_SIZE_OFFSET16] =
+				cpu_to_le16(current_count);
+			mark_buffer_dirty(bh);
+			goto done;
+		}
+	}
+done:
+	brelse(bh);
+	return error;
+}
+
 static int vmufat_get_block(struct inode *inode, sector_t iblock,
 	struct buffer_head *bh_result, int create)
 {
@@ -824,6 +870,9 @@ static int vmufat_get_block(struct inode *inode, sector_t iblock,
 		}
 	}
 	error = vmufat_set_fat(sb, finblk, nxtblk);
+	if (!error) {
+		error = vmufat_increment_filesize(inode);
+	}
 	if (error) {
 		mutex_unlock(&vmudetails->mutex);
 		goto out;
