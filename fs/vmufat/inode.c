@@ -498,7 +498,8 @@ static int vmufat_readdir(struct file *filp, struct dir_context *ctx)
 			if (saved_file->ftype == 0)
 				goto finish;
 			saved_file->fblk =
-				le16_to_cpu(((u16 *) bh->b_data)[pos16 + 1]);
+				le16_to_cpu(((u16 *) bh->b_data)
+					[pos16 + VMUFAT_START_OFFSET16]);
 			if (saved_file->fblk == 0)
 				saved_file->fblk = VMUFAT_ZEROBLOCK;
 			memcpy(saved_file->fname,
@@ -770,15 +771,15 @@ static int vmufat_increment_filesize(struct inode *inode)
 				continue;
 			}
 			if (le16_to_cpu(((u16 *) bh->b_data)
-				[j * VMU_DIR_RECORD_LEN16 +
+				[(j * VMU_DIR_RECORD_LEN16) +
 				VMUFAT_FIRSTBLOCK_OFFSET16]) != ino_num) {
 					continue;
 			}
 			int current_count = le16_to_cpu(((u16 *) bh->b_data)
-				[j * VMU_DIR_RECORD_LEN16 + VMUFAT_SIZE_OFFSET16]);
+				[(j * VMU_DIR_RECORD_LEN16) + VMUFAT_SIZE_OFFSET16]);
 			current_count++;
 			((u16 *) bh->b_data)
-				[j * VMU_DIR_RECORD_LEN16 + VMUFAT_SIZE_OFFSET16] =
+				[(j * VMU_DIR_RECORD_LEN16) + VMUFAT_SIZE_OFFSET16] =
 				cpu_to_le16(current_count);
 			mark_buffer_dirty(bh);
 			goto done;
@@ -947,7 +948,6 @@ const struct inode_operations vmufat_inode_operations = {
 };
 
 const struct file_operations vmufat_file_dir_operations = {
-	.owner =	THIS_MODULE,
 	.read =		generic_read_dir,
 	.iterate_shared =	vmufat_readdir,
 	.fsync =	generic_file_fsync,

@@ -360,26 +360,10 @@ found:
 		error = -EIO;
 		goto out;
 	}
-	/* Have the directory entry
-	 * so now update it */
-	if (inode_num != 0)
-		bh->b_data[pos] = VMU_DATA;
-	else
-		bh->b_data[pos] = VMU_GAME;
-	if (bh->b_data[pos + 1] !=  0 && bh->b_data[pos + 1] != (char) 0xff)
-		bh->b_data[pos + 1] = 0;
-	((u16 *) bh->b_data)[pos16 + 1] = cpu_to_le16(inode_num);
 	/* BCD timestamp it */
 	ktime_get_coarse_real_ts64(&current_time);
 	in->i_mtime_sec = current_time.tv_sec;
 	vmufat_save_bcd(in, bh->b_data, pos);
-	((u16 *) bh->b_data)[pos16 + VMUFAT_SIZE_OFFSET16] =
-		cpu_to_le16(in->i_blocks);
-	if (inode_num != 0)
-		((u16 *) bh->b_data)[pos16 + VMUFAT_HEADER_OFFSET16] = 0;
-	else /* game */
-		((u16 *) bh->b_data)[pos16 + VMUFAT_HEADER_OFFSET16]
-			= cpu_to_le16(1);
 	mutex_unlock(&vmudetails->mutex);
 	mark_buffer_dirty(bh);
 	brelse(bh);
