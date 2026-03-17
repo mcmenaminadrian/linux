@@ -100,20 +100,32 @@ static int vmufat_get_freeblock(int start, int end, struct buffer_head *bh)
 	int i, ret = -1;
 	__le16 fatdata;
 
-	for (i = start; i < end; i++) {
-		fatdata = le16_to_cpu(((u16 *)bh->b_data)[i]);
-		if (fatdata == VMUFAT_UNALLOCATED) {
-			ret = i;
-			break;
+	if (start < end) {
+		for (i = start; i < end; i++) {
+			fatdata = le16_to_cpu(((u16 *)bh->b_data)[i]);
+			if (fatdata == VMUFAT_UNALLOCATED) {
+				ret = i;
+				break;
+			}
+		}
+	} else {
+		for (i = start; i > end; i--) {
+			fatdata = le16_to_cpu(((u16 *)bh->b_data)[i]);
+			if (fatdata == VMUFAT_UNALLOCATED) {
+				ret = i;
+				break;
+			}
 		}
 	}
 	return ret;
 }
 
 /*
- * Find a block marked free in the FAT
+ * Find a block marked free in the FAT - for exec files
+ * Dreamcasts expect data and exec files to be stored differently
+ * - we attempt to replicate that
  */
-static int vmufat_find_free(struct super_block *sb)
+static int vmufat_find_free_forward(struct super_block *sb)
 {
 	struct memcard *vmudetails;
 	int testblk, fatblk, ret = -1;
@@ -124,12 +136,51 @@ static int vmufat_find_free(struct super_block *sb)
 	fatblk = vmudetails->fat_bnum;
 	for (int i = 0; i < vmudetails->fat_len; i++)
 	{
+		if ((i * VMU_BLK_SZ16) > (vmudetails->dir_bnum - vmudetails->dir_len))
+		{
+			goto full;
+		}
 		bh_fat = vmufat_sb_bread(sb, fatblk + i);
 		if (!bh_fat) {
 			ret = -EIO;
 			goto fail;
 		}
 		testblk = vmufat_get_freeblock(0, VMU_BLK_SZ16, bh_fat);
+		put_bh(bh_fat);
+		if (testblk >= 0) {
+			goto out_of_loop;
+		}
+	}
+full:
+	printk(KERN_INFO "VMUFAT: volume is full\n");
+	ret = -ENOSPC;
+	goto fail;
+
+out_of_loop:
+	ret = testblk;
+fail:
+	return ret;
+}
+
+/* And for data files*/
+static int vmu_find_free_backward(struct super_block *sb)
+{
+		struct memcard *vmudetails;
+	int testblk, fatblk, ret = -1;
+	struct buffer_head *bh_fat;
+
+	vmudetails = sb->s_fs_info;
+
+	fatblk = vmudetails->fat_bnum;
+	for (int i = (vmudetails->dir_bnum - vmudetails->dir_len) / VMU_BLK_SZ16;
+		i <= 0 ; i--)
+	{
+		bh_fat = vmufat_sb_bread(sb, fatblk + i);
+		if (!bh_fat) {
+			ret = -EIO;
+			goto fail;
+		}
+		testblk = vmufat_get_freeblock(VMU_BLK_SZ16 , 0, bh_fat);
 		put_bh(bh_fat);
 		if (testblk >= 0) {
 			goto out_of_loop;
@@ -143,6 +194,7 @@ out_of_loop:
 	ret = testblk;
 fail:
 	return ret;
+
 }
 
 /* read the FAT for a given block */
@@ -303,8 +355,10 @@ static int vmufat_allocate_inode(umode_t imode,
 			in->i_ino = VMUFAT_ZEROBLOCK;
 			return error;
 		}
+		error = vmu_find_free_forward(sb)
+	} else {
+		error = vmufat_find_free_backward(sb);
 	}
-	error = vmufat_find_free(sb);
 	if (error == 0) {
 		in->i_ino = VMUFAT_ZEROBLOCK;
 	} else if (error > 0) {
