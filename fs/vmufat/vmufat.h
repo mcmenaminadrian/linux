@@ -8,8 +8,9 @@
 
 /* GNU utils won't list files with inode num 0 */
 #define VMUFAT_ZEROBLOCK		0x10000
-#define VMU_BLK_SZ			512
-#define	VMU_BLK_SZ16			256
+#define VMU_BLK_SZ				0x200
+#define	VMU_BLK_SZ16			0x100
+#define VMU_PHYS_SZ				0x100
 
 /* file allocation table markers */
 #define VMUFAT_FILE_END			0xFFFA
