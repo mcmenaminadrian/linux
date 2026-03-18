@@ -677,7 +677,7 @@ static int vmufat_clean_fat(struct super_block *sb, int inum)
 static void vmufat_shorten_dirfat(struct super_block *sb, const int block_leaving)
 {
 	vmufat_set_fat(sb, block_leaving, VMUFAT_UNALLOCATED);
-
+	vmufat_set_fat(sb, block_leaving + 1, VMUFAT_FILE_END);
 }
 
 /*
