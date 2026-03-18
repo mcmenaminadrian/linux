@@ -400,10 +400,13 @@ static void vmu_handle_zeroblock(int recno, struct buffer_head *bh, int ino)
 static void vmu_write_name(int recno, struct buffer_head *bh, char *name,
 	int len)
 {
-	memset((char *) (bh->b_data + recno + VMUFAT_NAME_OFFSET), '\0',
-		VMUFAT_NAMELEN);
-	memcpy((char *) (bh->b_data + recno + VMUFAT_NAME_OFFSET),
-		name, len);
+	if ((bh->b_size - recno - VMUFAT_NAME_OFFSET) >= 
+		VMUFAT_NAMELEN && (bh->b_size - recno - VMUFAT_NAME_OFFSET) >= len) {
+		memset((char *) (bh->b_data + recno + VMUFAT_NAME_OFFSET), '\0',
+			VMUFAT_NAMELEN);
+		memcpy((char *) (bh->b_data + recno + VMUFAT_NAME_OFFSET),
+			name, len);
+	}
 }
 
 static int vmufat_inode_create(struct mnt_idmap *idmap, struct inode *dir,
@@ -561,9 +564,11 @@ static int vmufat_readdir(struct file *filp, struct dir_context *ctx)
 					[pos16 + VMUFAT_START_OFFSET16]);
 			if (saved_file->fblk == 0)
 				saved_file->fblk = VMUFAT_ZEROBLOCK;
-			memcpy(saved_file->fname,
-				bh->b_data + pos + VMUFAT_NAME_OFFSET,
-				VMUFAT_NAMELEN);
+			if ((bh->b_size - pos - VMUFAT_NAME_OFFSET) >= VMUFAT_NAMELEN) {
+				memcpy(saved_file->fname,
+					bh->b_data + pos + VMUFAT_NAME_OFFSET,
+					VMUFAT_NAMELEN);
+			}
 			filenamelen = strnlen(saved_file->fname, VMUFAT_NAMELEN);
 			error = ctx->actor(ctx, saved_file->fname, filenamelen,
 				index++, saved_file->fblk, DT_REG);
@@ -669,6 +674,12 @@ static int vmufat_clean_fat(struct super_block *sb, int inum)
 	return error;
 }
 
+static void vmufat_shorten_dirfat(struct super_block *sb, const int block_leaving)
+{
+	vmufat_set_fat(sb, block_leaving, VMUFAT_UNALLOCATED);
+
+}
+
 /*
  * Delete inode by marking space as free in FAT
  * no need to waste time and effort by actually
@@ -679,7 +690,7 @@ static void vmufat_remove_inode(struct inode *in)
 	struct buffer_head *bh = NULL, *bh_old = NULL;
 	struct super_block *sb;
 	struct memcard *vmudetails;
-	int i, j, k, l, startpt, found = 0;
+	int i, j, k, l, x, startpt, found = 0;
 
 	if (in->i_ino == VMUFAT_ZEROBLOCK)
 		in->i_ino = 0;
@@ -700,10 +711,10 @@ static void vmufat_remove_inode(struct inode *in)
 	/* Now clean the directory entry
 	 * Have to wander through this
 	 * to find the appropriate entry */
-	for (i = vmudetails->dir_bnum;
-		i > vmudetails->dir_bnum - vmudetails->dir_len; i--) {
+	for (x = vmudetails->dir_bnum;
+		x > vmudetails->dir_bnum - vmudetails->dir_len; x--) {
 		brelse(bh);
-		bh = vmufat_sb_bread(sb, i);
+		bh = vmufat_sb_bread(sb, x);
 		if (!bh) {
 			mutex_unlock(&vmudetails->mutex);
 			goto failure;
@@ -774,10 +785,14 @@ lastdirfound:
 			bh_old->b_data[(k - 1) * VMU_DIR_RECORD_LEN + i];
 		bh_old->b_data[(k - 1) * VMU_DIR_RECORD_LEN + i] = 0;
 	}
+	if (bh_old != bh) {
+		if ((k - 1) == 0) {
+			vmufat_shorten_dirfat(sb, l);
+		}
+	}
 	mark_buffer_dirty(bh_old);
 	mark_buffer_dirty(bh);
 	brelse(bh_old);
-
 finish:
 	mutex_unlock(&vmudetails->mutex);
 	brelse(bh);
