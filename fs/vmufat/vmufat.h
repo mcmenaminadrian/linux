@@ -100,7 +100,7 @@ struct vmufat_inode {
 	enum vmufat_file_type {
 		GAME = 1,
 		DATA = 2
-	};
+	} ft;
 	struct inode vfs_inode;
 };
 
