@@ -258,7 +258,7 @@ static int vmufat_count_file_space(struct super_block *sb)
 		return error;
 	}
 	for (int i = vmudetails->dir_bnum;
-		i > vmudetails->dir_bnum - vmudetails->dir_len; i--) {
+		i > vmudetails->numblocks; i--) {
 		brelse(bh);
 		bh = vmufat_sb_bread(sb, i);
 		if (!bh) {

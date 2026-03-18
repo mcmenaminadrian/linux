@@ -136,7 +136,7 @@ static int vmufat_find_free_forward(struct super_block *sb)
 	fatblk = vmudetails->fat_bnum;
 	for (int i = 0; i < vmudetails->fat_len; i++)
 	{
-		if ((i * VMU_BLK_SZ16) > (vmudetails->dir_bnum - vmudetails->dir_len))
+		if ((i * VMU_BLK_SZ16) > (vmudetails->numblocks))
 		{
 			goto full;
 		}
@@ -165,14 +165,14 @@ fail:
 /* And for data files*/
 static int vmufat_find_free_backward(struct super_block *sb)
 {
-		struct memcard *vmudetails;
+	struct memcard *vmudetails;
 	int testblk, fatblk, ret = -1;
 	struct buffer_head *bh_fat;
 
 	vmudetails = sb->s_fs_info;
 
 	fatblk = vmudetails->fat_bnum;
-	for (int i = (vmudetails->dir_bnum - vmudetails->dir_len) / VMU_BLK_SZ16;
+	for (int i = (vmudetails->numblocks) / VMU_BLK_SZ16;
 		i <= 0 ; i--)
 	{
 		bh_fat = vmufat_sb_bread(sb, fatblk + i);
