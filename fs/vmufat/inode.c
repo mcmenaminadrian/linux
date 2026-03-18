@@ -674,12 +674,6 @@ static int vmufat_clean_fat(struct super_block *sb, int inum)
 	return error;
 }
 
-static void vmufat_shorten_dirfat(struct super_block *sb, const int block_leaving)
-{
-	vmufat_set_fat(sb, block_leaving, VMUFAT_UNALLOCATED);
-	vmufat_set_fat(sb, block_leaving + 1, VMUFAT_FILE_END);
-}
-
 /*
  * Delete inode by marking space as free in FAT
  * no need to waste time and effort by actually
@@ -784,11 +778,6 @@ lastdirfound:
 		bh->b_data[j * VMU_DIR_RECORD_LEN + i] =
 			bh_old->b_data[(k - 1) * VMU_DIR_RECORD_LEN + i];
 		bh_old->b_data[(k - 1) * VMU_DIR_RECORD_LEN + i] = 0;
-	}
-	if (bh_old != bh) {
-		if ((k - 1) == 0) {
-			vmufat_shorten_dirfat(sb, l);
-		}
 	}
 	mark_buffer_dirty(bh_old);
 	mark_buffer_dirty(bh);
