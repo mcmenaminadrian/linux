@@ -394,6 +394,11 @@ static void vmufat_populate_vmudata(struct memcard *vmudata,
 	if (test_sz == VMU_PHYS_SZ) {
 		vmudata->numblocks =
 		le16_to_cpu(((u16 *) bh->b_data)[VMU_LOCATION_USRLEN]);
+		if (vmudata->numblocks == 0)
+		{
+			vmudata->numblocks =
+				(vmudata->dir_bnum - vmudata->dir_len) + 1;			
+		}
 	} else {
 	/* return the true number of user available blocks - physical VMUs
  	 * return a neat 200 and ignore 40 blocks of usable space -
