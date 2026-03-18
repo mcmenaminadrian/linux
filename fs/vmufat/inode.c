@@ -347,7 +347,7 @@ static int vmufat_allocate_inode(umode_t imode,
 	int error = 0;
 	/* Executable files should be at the start of the volume if possible */
 	if (imode & EXEC) {
-		vin->vmufat_file_type = GAME;
+		vin->ft = GAME;
 		if (vmufat_get_fat(sb, 0) != VMUFAT_UNALLOCATED) {
 			/* Warning for anyone concerned about playable games */
 			printk(KERN_WARNING "VMUFAT: Warning cannot write excutable "
@@ -359,7 +359,7 @@ static int vmufat_allocate_inode(umode_t imode,
 		}
 		error = vmufat_find_free_forward(sb);
 	} else {
-		vin->vmufat_file_type = DATA;
+		vin->ft = DATA;
 		error = vmufat_find_free_backward(sb);
 	}
 	if (error == 0) {
@@ -920,7 +920,7 @@ static int vmufat_get_block(struct inode *inode, sector_t iblock,
 			nxtblk = finblk + 1;
 		}
 	} else {
-		if (vin->vmufat_file_type == GAME) {
+		if (vin->ft == GAME) {
 			nxtblk = vmufat_find_free_forward(sb);
 		} else {
 			nxtblk = vmufat_find_free_backward(sb);
