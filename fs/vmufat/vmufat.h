@@ -97,6 +97,10 @@ struct vmufat_block {
 struct vmufat_inode {
 	struct list_head blocks;
 	unsigned int nblcks;
+	enum file_type {
+		EXEC,
+		DATA
+	};
 	struct inode vfs_inode;
 };
 

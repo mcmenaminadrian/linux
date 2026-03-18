@@ -211,7 +211,7 @@ static void vmufat_count_freeblocks(struct super_block *sb,
 	}
 	kstatbuf->f_bfree = free;
 	kstatbuf->f_bavail = free;
-	kstatbuf->f_blocks = vmudetails->sb_num + 1;
+	kstatbuf->f_blocks = vmudetails->sb_bnum + 1;
 }
 
 int vmufat_count_files(struct super_block *sb)
@@ -393,13 +393,13 @@ static void vmufat_populate_vmudata(struct memcard *vmudata,
 		le16_to_cpu(((u16 *) bh->b_data)[VMU_LOCATION_DIRLEN]);
 	if (test_sz == VMU_PHYS_SZ) {
 		vmudata->numblocks =
-		le16_to_cpu(((u16 *) bh->b_data)[VMU_LOCATION_USRLEN])
+		le16_to_cpu(((u16 *) bh->b_data)[VMU_LOCATION_USRLEN]);
 	} else {
 	/* return the true number of user available blocks - physical VMUs
  	 * return a neat 200 and ignore 40 blocks of usable space -
  	 * we get round that in a hardware neutral way */
 		vmudata->numblocks =
-			(vmudata->dir_bnum - vmudata->vmudata->dir_len) + 1;
+			(vmudata->dir_bnum - vmudata->dir_len) + 1;
 	}
 }
 

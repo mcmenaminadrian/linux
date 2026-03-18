@@ -163,7 +163,7 @@ fail:
 }
 
 /* And for data files*/
-static int vmu_find_free_backward(struct super_block *sb)
+static int vmufat_find_free_backward(struct super_block *sb)
 {
 		struct memcard *vmudetails;
 	int testblk, fatblk, ret = -1;
@@ -343,9 +343,11 @@ void vmufat_save_bcd(struct inode *in, char *bh, int index_to_dir)
 static int vmufat_allocate_inode(umode_t imode,
 		struct super_block *sb, struct inode *in)
 {
+	struct vmufat_inode *vin = VMUFAT_I(in);
 	int error = 0;
 	/* Executable files should be at the start of the volume if possible */
 	if (imode & EXEC) {
+		vin->file_type = EXEC;
 		if (vmufat_get_fat(sb, 0) != VMUFAT_UNALLOCATED) {
 			/* Warning for anyone concerned about playable games */
 			printk(KERN_WARNING "VMUFAT: Warning cannot write excutable "
@@ -355,8 +357,9 @@ static int vmufat_allocate_inode(umode_t imode,
 			in->i_ino = VMUFAT_ZEROBLOCK;
 			return error;
 		}
-		error = vmu_find_free_forward(sb)
+		error = vmufat_find_free_forward(sb);
 	} else {
+		vin->file_type = DATA;
 		error = vmufat_find_free_backward(sb);
 	}
 	if (error == 0) {
@@ -906,7 +909,7 @@ static int vmufat_get_block(struct inode *inode, sector_t iblock,
 			printk(KERN_WARNING "VMUFAT: Cannot allocate linear "
 				"space needed for executible\n");
 			mutex_lock(&vmudetails->mutex);
-			nxtblk = vmufat_find_free(sb);
+			nxtblk = vmufat_find_free_forward(sb);
 			if (nxtblk < 0) {
 				mutex_unlock(&vmudetails->mutex);
 				error = nxtblk;
@@ -917,7 +920,11 @@ static int vmufat_get_block(struct inode *inode, sector_t iblock,
 			nxtblk = finblk + 1;
 		}
 	} else {
-		nxtblk = vmufat_find_free(sb);
+		if (vin->file_type == EXEC) {
+			nxtblk = vmufat_find_free_forward(sb);
+		} else {
+			nxtblk = vmufat_find_free_backward(sb);
+		}
 		if (nxtblk < 0) {
 			mutex_unlock(&vmudetails->mutex);
 			error = nxtblk;
