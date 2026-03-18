@@ -23,10 +23,10 @@
 #define VMUFAT_START_ALLOC		199
 
 /* specifcations for directory entries */
-#define VMU_DIR_RECORD_LEN		0x20
+#define VMU_DIR_RECORD_LEN			0x20
 #define VMU_DIR_RECORD_LEN16		0x10
 #define VMU_DIR_ENTRIES_PER_BLOCK	0x10
-#define VMUFAT_NAME_OFFSET		0x04
+#define VMUFAT_NAME_OFFSET			0x04
 #define VMUFAT_FIRSTBLOCK_OFFSET16	0x01
 #define VMUFAT_START_OFFSET16		0x01
 #define VMUFAT_SIZE_OFFSET16		0x0C
@@ -41,11 +41,11 @@
 #define VMU_LOCATION_FATLEN		0x24
 #define VMU_LOCATION_DIR		0x25
 #define VMU_LOCATION_DIRLEN		0x26
-#define VMU_LOCATION_USRLEN		0x28 /* reports false figure */
+#define VMU_LOCATION_USRLEN		0x28 /* set to 200 by real hardware */
 
 /* date offsets */
-#define VMUFAT_SB_DATEOFFSET		0x30
-#define VMUFAT_FILE_DATEOFFSET		0x10
+#define VMUFAT_SB_DATEOFFSET	0x30
+#define VMUFAT_FILE_DATEOFFSET	0x10
 
 #define EXEC				0111
 #define NOCOPY				0xFF

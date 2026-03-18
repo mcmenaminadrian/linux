@@ -95,13 +95,15 @@ out:
 	return ERR_PTR(error);
 }
 
+
+/* Search for free block in inclusive range */
 static int vmufat_get_freeblock(int start, int end, struct buffer_head *bh)
 {
 	int i, ret = -1;
 	__le16 fatdata;
 
 	if (start < end) {
-		for (i = start; i < end; i++) {
+		for (i = start; i <= end; i++) {
 			fatdata = le16_to_cpu(((u16 *)bh->b_data)[i]);
 			if (fatdata == VMUFAT_UNALLOCATED) {
 				ret = i;
@@ -109,7 +111,7 @@ static int vmufat_get_freeblock(int start, int end, struct buffer_head *bh)
 			}
 		}
 	} else {
-		for (i = start; i > end; i--) {
+		for (i = start; i >= end; i--) {
 			fatdata = le16_to_cpu(((u16 *)bh->b_data)[i]);
 			if (fatdata == VMUFAT_UNALLOCATED) {
 				ret = i;
@@ -145,7 +147,7 @@ static int vmufat_find_free_forward(struct super_block *sb)
 			ret = -EIO;
 			goto fail;
 		}
-		testblk = vmufat_get_freeblock(0, VMU_BLK_SZ16, bh_fat);
+		testblk = vmufat_get_freeblock(0, vmudetails->numblocks - 1, bh_fat);
 		put_bh(bh_fat);
 		if (testblk >= 0) {
 			goto out_of_loop;
@@ -180,7 +182,7 @@ static int vmufat_find_free_backward(struct super_block *sb)
 			ret = -EIO;
 			goto fail;
 		}
-		testblk = vmufat_get_freeblock(VMU_BLK_SZ16 , 0, bh_fat);
+		testblk = vmufat_get_freeblock(vmudetails->numblocks - 1, 0, bh_fat);
 		put_bh(bh_fat);
 		if (testblk >= 0) {
 			goto out_of_loop;
