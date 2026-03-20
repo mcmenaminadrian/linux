@@ -168,31 +168,35 @@ fail:
 static int vmufat_find_free_backward(struct super_block *sb)
 {
 	struct memcard *vmudetails;
-	int testblk, fatblk, ret = -1;
+	int testblk, ret = -1;
+	int i, readblk;
 	struct buffer_head *bh_fat;
 
 	vmudetails = sb->s_fs_info;
+	readblk = (vmudetails->numblocks - 1) % VMU_BLK_SZ;
 
-	fatblk = vmudetails->fat_bnum;
-	for (int i = vmudetails->numblocks; i <= 0 ; i--)
+	for (i = vmudetails->fat_bnum;
+		i >  vmudetails->fat_bnum - vmudetails->fat_len; i--)
 	{
-		bh_fat = vmufat_sb_bread(sb, fatblk + i);
+		bh_fat = vmufat_sb_bread(sb, i);
 		if (!bh_fat) {
 			ret = -EIO;
 			goto fail;
 		}
-		testblk = vmufat_get_freeblock(vmudetails->numblocks - 1, 0, bh_fat);
+		testblk = vmufat_get_freeblock(readblk, 0, bh_fat);
 		put_bh(bh_fat);
 		if (testblk >= 0) {
 			goto out_of_loop;
 		}
+		readblk = VMU_BLK_SZ - 1;
 	}
 	printk(KERN_INFO "VMUFAT: volume is full\n");
 	ret = -ENOSPC;
 	goto fail;
 
 out_of_loop:
-	ret = testblk;
+	ret = testblk + (i - (vmudetails->fat_bnum - vmudetails->fat_len))
+		* VMU_BLK_SZ;
 fail:
 	return ret;
 
