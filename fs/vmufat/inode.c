@@ -174,8 +174,7 @@ static int vmufat_find_free_backward(struct super_block *sb)
 	vmudetails = sb->s_fs_info;
 
 	fatblk = vmudetails->fat_bnum;
-	for (int i = (vmudetails->numblocks) / VMU_BLK_SZ16;
-		i <= 0 ; i--)
+	for (int i = vmudetails->numblocks; i <= 0 ; i--)
 	{
 		bh_fat = vmufat_sb_bread(sb, fatblk + i);
 		if (!bh_fat) {
