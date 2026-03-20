@@ -134,22 +134,17 @@ static int vmufat_find_free_forward(struct super_block *sb)
 	struct buffer_head *bh_fat;
 
 	vmudetails = sb->s_fs_info;
-
 	fatblk = vmudetails->fat_bnum;
 	for (int i = 0; i < vmudetails->fat_len; i++)
 	{
-		if ((i * VMU_BLK_SZ16) > (vmudetails->numblocks))
-		{
-			goto full;
-		}
 		bh_fat = vmufat_sb_bread(sb, fatblk + i);
 		if (!bh_fat) {
 			ret = -EIO;
 			goto fail;
 		}
-		testblk = vmufat_get_freeblock(0, vmudetails->numblocks - 1, bh_fat);
+		testblk = vmufat_get_freeblock(0, VMU_BLK_SZ, bh_fat);
 		put_bh(bh_fat);
-		if (testblk >= 0) {
+		if (testblk > 0 && testblk + i * VMU_BLK_SZ < vmudetails->numblocks) {
 			goto out_of_loop;
 		}
 	}
@@ -195,7 +190,7 @@ static int vmufat_find_free_backward(struct super_block *sb)
 	goto fail;
 
 out_of_loop:
-	ret = testblk + (i - (vmudetails->fat_bnum - vmudetails->fat_len))
+	ret = testblk + ((i - 1) - (vmudetails->fat_bnum - vmudetails->fat_len))
 		* VMU_BLK_SZ;
 fail:
 	return ret;
