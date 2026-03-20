@@ -175,8 +175,8 @@ static int vmufat_find_free_backward(struct super_block *sb)
 	vmudetails = sb->s_fs_info;
 	readblk = (vmudetails->numblocks - 1) % VMU_BLK_SZ;
 
-	for (i = vmudetails->fat_bnum;
-		i >  vmudetails->fat_bnum - vmudetails->fat_len; i--)
+	for (i = (vmudetails->fat_bnum - vmudetails->fat_len) + 1;
+		i >=  vmudetails->fat_bnum; i--)
 	{
 		bh_fat = vmufat_sb_bread(sb, i);
 		if (!bh_fat) {

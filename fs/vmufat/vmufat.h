@@ -6,7 +6,7 @@
 /* maximum length of file name */
 #define VMUFAT_NAMELEN			12
 
-/* GNU utils won't list files with inode num 0 */
+/* Some GNU utils might not list files with inode num 0 */
 #define VMUFAT_ZEROBLOCK		0x10000
 #define VMU_BLK_SZ				0x200
 #define	VMU_BLK_SZ16			0x100
