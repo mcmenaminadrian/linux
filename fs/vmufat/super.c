@@ -95,12 +95,12 @@ struct inode *vmufat_get_inode(struct super_block *sb, long ino)
 
 	inode = iget_locked(sb, ino);
 	if (!inode) {
-		error = -EIO;
+		error = -ENOENT;
 		goto reterror;
 	}
 	vmudetails = sb->s_fs_info;
 	if (!vmudetails) {
-		error = -EIO;
+		error = -ENOMEM;
 		goto reterror;
 	}
 	superblock_bno = vmudetails->sb_bnum;
@@ -112,7 +112,7 @@ struct inode *vmufat_get_inode(struct super_block *sb, long ino)
 		if (inode->i_ino == superblock_bno) {
 			bh = vmufat_sb_bread(sb, inode->i_ino);
 			if (!bh) {
-				error = -EIO;
+				error = -ENOENT;
 				goto failed;
 			}
 			inode->i_ctime_sec = inode->i_mtime_sec =
@@ -132,7 +132,7 @@ struct inode *vmufat_get_inode(struct super_block *sb, long ino)
 				bh = vmufat_sb_bread(sb,
 					vmudetails->dir_bnum - i);
 				if (!bh) {
-					error = -EIO;
+					error = -ENOMEM;
 					goto failed;
 				}
 				for (j = 0; j < VMU_DIR_ENTRIES_PER_BLOCK; j++)
@@ -333,7 +333,7 @@ static int vmufat_write_inode(struct inode *in, struct writeback_control *wbc)
 		bh = vmufat_sb_bread(sb, i);
 		if (!bh) {
 			mutex_unlock(&vmudetails->mutex);
-			error = -EIO;
+			error = -ENXIO;
 			goto out;
 		}
 		for (j = 0; j < VMU_DIR_ENTRIES_PER_BLOCK; j++) {
@@ -357,7 +357,7 @@ static int vmufat_write_inode(struct inode *in, struct writeback_control *wbc)
 found:
 	if (found == 0) {
 		mutex_unlock(&vmudetails->mutex);
-		error = -EIO;
+		error = -ENXIO;
 		goto out;
 	}
 	/* BCD timestamp it */
