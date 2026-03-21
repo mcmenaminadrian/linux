@@ -132,10 +132,11 @@ static int vmufat_find_free_forward(struct super_block *sb)
 	struct memcard *vmudetails;
 	int testblk, fatblk, ret = -1;
 	struct buffer_head *bh_fat;
+	int i;
 
 	vmudetails = sb->s_fs_info;
 	fatblk = vmudetails->fat_bnum;
-	for (int i = 0; i < vmudetails->fat_len; i++)
+	for (i = 0; i < vmudetails->fat_len; i++)
 	{
 		bh_fat = vmufat_sb_bread(sb, fatblk + i);
 		if (!bh_fat) {
@@ -144,17 +145,16 @@ static int vmufat_find_free_forward(struct super_block *sb)
 		}
 		testblk = vmufat_get_freeblock(0, VMU_BLK_SZ, bh_fat);
 		put_bh(bh_fat);
-		if (testblk > 0 && testblk + i * VMU_BLK_SZ < vmudetails->numblocks) {
+		if (testblk >= 0 && testblk + (i * VMU_BLK_SZ) < vmudetails->numblocks) {
 			goto out_of_loop;
 		}
 	}
-full:
 	printk(KERN_INFO "VMUFAT: volume is full\n");
 	ret = -ENOSPC;
 	goto fail;
 
 out_of_loop:
-	ret = testblk;
+	ret = testblk + (i * VMU_BLK_SZ);
 fail:
 	return ret;
 }
@@ -206,18 +206,18 @@ u16 vmufat_get_fat(struct super_block *sb, long block)
 	struct memcard *vmudetails = sb->s_fs_info;
 
 	/* which block in the FAT */
-	offset = block / VMU_BLK_SZ16;
+	offset = block / VMU_BLK_SZ;
 	if (offset >= vmudetails->fat_len)
 		goto out;
 
-	/* fat_bnum points to highest block in FAT */
-	bufhead = vmufat_sb_bread(sb, offset + 1 +
-		vmudetails->fat_bnum - vmudetails->fat_len);
+	/* fat_bnum points to lowest block in FAT */
+	bufhead = vmufat_sb_bread(sb, offset +
+		vmudetails->fat_bnum);
 	if (!bufhead)
 		goto out;
 	/* look inside the block */
 	block_content = le16_to_cpu(((u16 *)bufhead->b_data)
-		[block % VMU_BLK_SZ16]);
+		[block % VMU_BLK_SZ]);
 	put_bh(bufhead);
 out:
 	return block_content;
