@@ -20,7 +20,6 @@
 /* parameters for possible VMU volume sizes */
 #define VMUFAT_MIN_BLK			0x04
 #define VMUFAT_MAX_BLK			0x10000
-//#define VMUFAT_START_ALLOC		199
 
 /* specifcations for directory entries */
 #define VMU_DIR_RECORD_LEN			0x20
