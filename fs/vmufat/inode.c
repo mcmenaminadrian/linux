@@ -234,8 +234,7 @@ static int vmufat_set_fat(struct super_block *sb, long block,
 		error = -EINVAL;
 		goto out;
 	}
-	bh = vmufat_sb_bread(sb, offset + (1 +
-		vmudetails->fat_bnum - vmudetails->fat_len));
+	bh = vmufat_sb_bread(sb, offset + vmudetails->fat_bnum);
 	if (!bh) {
 		error = -EIO;
 		goto out;
