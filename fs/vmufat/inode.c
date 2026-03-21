@@ -149,7 +149,7 @@ static int vmufat_find_free_forward(struct super_block *sb)
 			goto out_of_loop;
 		}
 	}
-	printk(KERN_INFO "VMUFAT: volume is full\n");
+	printk(KERN_INFO "VMUFAT: volume is full, cannot save game file\n");
 	ret = -ENOSPC;
 	goto fail;
 
@@ -170,10 +170,9 @@ static int vmufat_find_free_backward(struct super_block *sb)
 	vmudetails = sb->s_fs_info;
 	readblk = (vmudetails->numblocks - 1) % VMU_BLK_SZ;
 
-	for (i = (vmudetails->fat_bnum - vmudetails->fat_len) + 1;
-		i >=  vmudetails->fat_bnum; i--)
+	for (i = vmudetails->fat_len - 1; i >= 0; i--)
 	{
-		bh_fat = vmufat_sb_bread(sb, i);
+		bh_fat = vmufat_sb_bread(sb, i + vmudetails->fat_bnum);
 		if (!bh_fat) {
 			ret = -EIO;
 			goto fail;
@@ -185,13 +184,12 @@ static int vmufat_find_free_backward(struct super_block *sb)
 		}
 		readblk = VMU_BLK_SZ - 1;
 	}
-	printk(KERN_INFO "VMUFAT: volume is full\n");
+	printk(KERN_INFO "VMUFAT: volume is full, cannot save data file\n");
 	ret = -ENOSPC;
 	goto fail;
 
 out_of_loop:
-	ret = testblk + ((i - 1) - (vmudetails->fat_bnum - vmudetails->fat_len))
-		* VMU_BLK_SZ;
+	ret = testblk + i * VMU_BLK_SZ;
 fail:
 	return ret;
 
