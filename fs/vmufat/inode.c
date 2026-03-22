@@ -143,9 +143,9 @@ static int vmufat_find_free_forward(struct super_block *sb)
 			ret = -EIO;
 			goto fail;
 		}
-		testblk = vmufat_get_freeblock(0, VMU_BLK_SZ, bh_fat);
+		testblk = vmufat_get_freeblock(0, VMU_BLK_SZ16 - 1, bh_fat);
 		put_bh(bh_fat);
-		if (testblk >= 0 && testblk + (i * VMU_BLK_SZ) < vmudetails->numblocks) {
+		if (testblk >= 0 && testblk + (i * VMU_BLK_SZ16) < vmudetails->numblocks) {
 			goto out_of_loop;
 		}
 	}
@@ -154,7 +154,7 @@ static int vmufat_find_free_forward(struct super_block *sb)
 	goto fail;
 
 out_of_loop:
-	ret = testblk + (i * VMU_BLK_SZ);
+	ret = testblk + (i * VMU_BLK_SZ16);
 fail:
 	return ret;
 }
@@ -168,7 +168,7 @@ static int vmufat_find_free_backward(struct super_block *sb)
 	struct buffer_head *bh_fat;
 
 	vmudetails = sb->s_fs_info;
-	readblk = (vmudetails->numblocks - 1) % VMU_BLK_SZ;
+	readblk = (vmudetails->numblocks - 1) % VMU_BLK_SZ16;
 
 	for (i = vmudetails->fat_len - 1; i >= 0; i--)
 	{
@@ -182,14 +182,14 @@ static int vmufat_find_free_backward(struct super_block *sb)
 		if (testblk >= 0) {
 			goto out_of_loop;
 		}
-		readblk = VMU_BLK_SZ - 1;
+		readblk = VMU_BLK_SZ16 - 1;
 	}
 	printk(KERN_INFO "VMUFAT: volume is full, cannot save data file\n");
 	ret = -ENOSPC;
 	goto fail;
 
 out_of_loop:
-	ret = testblk + i * VMU_BLK_SZ;
+	ret = testblk + (i * VMU_BLK_SZ16);
 fail:
 	return ret;
 
