@@ -144,7 +144,7 @@ static int vmufat_find_free_forward(struct super_block *sb)
 			goto fail;
 		}
 		testblk = vmufat_get_freeblock(0, VMU_BLK_SZ16 - 1, bh_fat);
-		put_bh(bh_fat);
+		brelse(bh_fat);
 		if (testblk >= 0 && testblk + (i * VMU_BLK_SZ16) < vmudetails->numblocks) {
 			goto out_of_loop;
 		}
@@ -178,7 +178,7 @@ static int vmufat_find_free_backward(struct super_block *sb)
 			goto fail;
 		}
 		testblk = vmufat_get_freeblock(readblk, 0, bh_fat);
-		put_bh(bh_fat);
+		brelse(bh_fat);
 		if (testblk >= 0) {
 			goto out_of_loop;
 		}
@@ -216,7 +216,7 @@ u16 vmufat_get_fat(struct super_block *sb, long block)
 	/* look inside the block */
 	block_content = le16_to_cpu(((u16 *)bufhead->b_data)
 		[block % VMU_BLK_SZ16]);
-	put_bh(bufhead);
+	brelse(bufhead);
 out:
 	return block_content;
 }
@@ -737,7 +737,7 @@ found_bk:
 	mark_buffer_dirty(bh);
 	// now test if there are further records
 	found = false;
-	for (i = x; i < vmudetails->dir_bnum - vmudetails->dir_len; i++)
+	for (i = x; i > vmudetails->dir_bnum - vmudetails->dir_len; i--)
 	{
 		brelse(bh_old);
 		bh_old = vmufat_sb_bread(sb, i);
