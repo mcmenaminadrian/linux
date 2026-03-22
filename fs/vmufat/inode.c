@@ -679,14 +679,15 @@ static void vmufat_remove_inode(struct inode *in)
 	struct buffer_head *bh = NULL, *bh_old = NULL;
 	struct super_block *sb;
 	struct memcard *vmudetails;
-	int i, j, k, l, x, startpt, found = 0;
+	int i, j, k, l, x, start_point;
+	bool found, first = true;
 
 	if (in->i_ino == VMUFAT_ZEROBLOCK)
 		in->i_ino = 0;
 	sb = in->i_sb;
 	vmudetails = sb->s_fs_info;
 	if (in->i_ino > vmudetails->fat_len * sb->s_blocksize / 2) {
-		printk(KERN_WARNING "VMUFAT: attempting to delete"
+		printk(KERN_ERR "VMUFAT: attempting to delete"
 			"inode beyond device size");
 		goto ret;
 	}
@@ -698,7 +699,7 @@ static void vmufat_remove_inode(struct inode *in)
 	}
 
 	/* Now clean the directory entry
-	 * Have to wander through this
+	 * Have to walk through entries
 	 * to find the appropriate entry */
 	for (x = vmudetails->dir_bnum;
 		x > vmudetails->dir_bnum - vmudetails->dir_len; x--) {
@@ -711,76 +712,77 @@ static void vmufat_remove_inode(struct inode *in)
 		for (j = 0; j < VMU_DIR_ENTRIES_PER_BLOCK; j++) {
 			if (bh->b_data[j * VMU_DIR_RECORD_LEN] == 0) {
 				mutex_unlock(&vmudetails->mutex);
+				brelse(bh);
 				goto failure;
 			}
 			if (le16_to_cpu(((u16 *) bh->b_data)
 				[j * VMU_DIR_RECORD_LEN16 +
 				VMUFAT_FIRSTBLOCK_OFFSET16]) == in->i_ino) {
-				found = 1;
-				goto found;
+				found = true;
+				goto found_bk;
 			}
 		}
 	}
-found:
-	if (found == 0) {
-		mutex_unlock(&vmudetails->mutex);
-		goto failure;
-	}
-
-	/* Found directory entry - so NULL it now */
-	for (k = 0; k < VMU_DIR_RECORD_LEN; k++)
-		bh->b_data[j * VMU_DIR_RECORD_LEN + k] = 0;
-	mark_buffer_dirty(bh);
-	/* Patch up directory, by moving up last file */
-	found = 0;
-	startpt = j + 1;
-	for (l = i; l > vmudetails->dir_bnum - vmudetails->dir_len; l--) {
-		bh_old = vmufat_sb_bread(sb, l);
-		if (!bh_old) {
-			mutex_unlock(&vmudetails->mutex);
-			goto failure;
-		}
-		for (k = startpt; k < VMU_DIR_ENTRIES_PER_BLOCK; k++) {
-			if (bh_old->b_data[k * VMU_DIR_RECORD_LEN] == 0) {
-				found = 1;
-				brelse(bh_old);
-				goto lastdirfound;
-			}
-		}
-		startpt = 0;
-		brelse(bh_old);
-	}
-lastdirfound:
-	if (found == 0) {	/* full directory */
-		l = vmudetails->dir_bnum - vmudetails->dir_len + 1;
-		k = VMU_DIR_ENTRIES_PER_BLOCK;
-	} else if (l == i && k == j + 1) /* deleted entry was last in dir */
-		goto finish;
-	else if (k == 0) {
-		l = l + 1;
-		k = VMU_DIR_ENTRIES_PER_BLOCK;
-		if (l == i && k == j + 1)
-			goto finish;
-	}
-	/* fill gap first then wipe out old entry */
-	bh_old = vmufat_sb_bread(sb, l);
-	if (!bh_old) {
-		mutex_unlock(&vmudetails->mutex);
+found_bk:
+	// actually found nothing - an error or failure of some sort
+	if (!found) {
 		brelse(bh);
 		goto failure;
 	}
-	for (i = 0; i < VMU_DIR_RECORD_LEN; i++) {
-		bh->b_data[j * VMU_DIR_RECORD_LEN + i] =
-			bh_old->b_data[(k - 1) * VMU_DIR_RECORD_LEN + i];
-		bh_old->b_data[(k - 1) * VMU_DIR_RECORD_LEN + i] = 0;
+	// have found the directory entry, so first we clean it out
+	for (i = 0; i < DIR_RECORD_LEN; i++)
+	{
+		bh->b_data[i + (j * VMU_DIR_RECORD_LEN)] = 0;
 	}
-	mark_buffer_dirty(bh_old);
-	mark_buffer_dirty(bh);
-	brelse(bh_old);
-finish:
+	mark_bh_dirty(bh);
+	// now test if there are further records
+	found = false;
+	for (i = x; i < vmudetails->dir_bnum - vmudetails_>dir_len; i++)
+	{
+		brelse(bh_old);
+		bh_old = vmufat_sb_read(sb, i);
+		if (first) {
+			for (l = j; l < VMU_DIR_ENTRIES_PER_BLOCK; l++)
+			{
+				if (first) {
+					first = false;
+					continue;
+				}
+				if (bh_old->data[l * VMU_DIR_RECORD_LEN] == 0) {
+					found = true;
+					goto found_final;
+				}
+			}
+		} else {
+			for (l = 0; l < VMU_DIR_ENTRIES_PER_BLOCK; l++)
+			{
+				if (bh_old->data[l * VMU_DIR_RECORD_LEN] == 0) {
+					found = true;
+					goto found_final;
+				}
+			}
+		}
+	}
+found_final:
+	if (!found) // cleaned entry was the final entry
+	{
+		mutex_unlock(&vmudetails->mutex);
+		brelse(bh_old);
+		brelse(bh);
+		goto ret;
+	}
+	// copy the final entry into the empty slot and zero the final entry
+	for (k = 0; k < VMU_DIR_RECORD_LEN; k++)
+	{
+		bh->b_data[k + (j * VMU_DIR_RECORD_LEN)] = bh_old[k + (l * VMU_DIR_RECORD_LEN)];
+		bh_old[k + (l * VMU_DIR_RECORD_LEN)] = 0;
+	}
+	mark_bh_dirty(bh);
+	mark_bh_dirty(bh_old);
 	mutex_unlock(&vmudetails->mutex);
 	brelse(bh);
-	return;
+	brelse(bh_old);
+	goto ret;
 
 failure:
 	printk(KERN_WARNING "VMUFAT: Failure to read volume,"
