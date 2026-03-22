@@ -772,6 +772,13 @@ found_final:
 		goto ret;
 	}
 	// copy the final entry into the empty slot and zero the final entry
+	if (l = VMU_DIR_ENTRIES_PER_BLOCK) {
+		l = 0;
+		brelse(bh_old);
+		bh_old = vmufat_sb_bread(sb, i - 1);
+	} else {
+		l--;
+	}
 	for (k = 0; k < VMU_DIR_RECORD_LEN; k++)
 	{
 		bh->b_data[k + (j * VMU_DIR_RECORD_LEN)] = bh_old->b_data[k + (l * VMU_DIR_RECORD_LEN)];
