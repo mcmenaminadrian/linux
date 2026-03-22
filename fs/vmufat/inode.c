@@ -241,7 +241,7 @@ static int vmufat_set_fat(struct super_block *sb, long block,
 	}
 	((u16 *) bh->b_data)[block % VMU_BLK_SZ16] = cpu_to_le16(data_to_set);
 	mark_buffer_dirty(bh);
-	put_bh(bh);
+	brelse(bh);
 out:
 	return error;
 }
@@ -679,7 +679,7 @@ static void vmufat_remove_inode(struct inode *in)
 	struct buffer_head *bh = NULL, *bh_old = NULL;
 	struct super_block *sb;
 	struct memcard *vmudetails;
-	int i, j, k, l, x, start_point;
+	int i, j, k, l, x;
 	bool found, first = true;
 
 	if (in->i_ino == VMUFAT_ZEROBLOCK)
@@ -730,17 +730,17 @@ found_bk:
 		goto failure;
 	}
 	// have found the directory entry, so first we clean it out
-	for (i = 0; i < DIR_RECORD_LEN; i++)
+	for (i = 0; i < VMU_DIR_RECORD_LEN; i++)
 	{
 		bh->b_data[i + (j * VMU_DIR_RECORD_LEN)] = 0;
 	}
-	mark_bh_dirty(bh);
+	mark_buffer_dirty(bh);
 	// now test if there are further records
 	found = false;
-	for (i = x; i < vmudetails->dir_bnum - vmudetails_>dir_len; i++)
+	for (i = x; i < vmudetails->dir_bnum - vmudetails->dir_len; i++)
 	{
 		brelse(bh_old);
-		bh_old = vmufat_sb_read(sb, i);
+		bh_old = vmufat_sb_bread(sb, i);
 		if (first) {
 			for (l = j; l < VMU_DIR_ENTRIES_PER_BLOCK; l++)
 			{
@@ -748,7 +748,7 @@ found_bk:
 					first = false;
 					continue;
 				}
-				if (bh_old->data[l * VMU_DIR_RECORD_LEN] == 0) {
+				if (bh_old->b_data[l * VMU_DIR_RECORD_LEN] == 0) {
 					found = true;
 					goto found_final;
 				}
@@ -756,7 +756,7 @@ found_bk:
 		} else {
 			for (l = 0; l < VMU_DIR_ENTRIES_PER_BLOCK; l++)
 			{
-				if (bh_old->data[l * VMU_DIR_RECORD_LEN] == 0) {
+				if (bh_old->b_data[l * VMU_DIR_RECORD_LEN] == 0) {
 					found = true;
 					goto found_final;
 				}
@@ -774,11 +774,11 @@ found_final:
 	// copy the final entry into the empty slot and zero the final entry
 	for (k = 0; k < VMU_DIR_RECORD_LEN; k++)
 	{
-		bh->b_data[k + (j * VMU_DIR_RECORD_LEN)] = bh_old[k + (l * VMU_DIR_RECORD_LEN)];
-		bh_old[k + (l * VMU_DIR_RECORD_LEN)] = 0;
+		bh->b_data[k + (j * VMU_DIR_RECORD_LEN)] = bh_old->b_data[k + (l * VMU_DIR_RECORD_LEN)];
+		bh_old->b_data[k + (l * VMU_DIR_RECORD_LEN)] = 0;
 	}
-	mark_bh_dirty(bh);
-	mark_bh_dirty(bh_old);
+	mark_buffer_dirty(bh);
+	mark_buffer_dirty(bh_old);
 	mutex_unlock(&vmudetails->mutex);
 	brelse(bh);
 	brelse(bh_old);
