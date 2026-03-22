@@ -204,7 +204,7 @@ u16 vmufat_get_fat(struct super_block *sb, long block)
 	struct memcard *vmudetails = sb->s_fs_info;
 
 	/* which block in the FAT */
-	offset = block / VMU_BLK_SZ;
+	offset = block / VMU_BLK_SZ16;
 	if (offset >= vmudetails->fat_len)
 		goto out;
 
@@ -215,7 +215,7 @@ u16 vmufat_get_fat(struct super_block *sb, long block)
 		goto out;
 	/* look inside the block */
 	block_content = le16_to_cpu(((u16 *)bufhead->b_data)
-		[block % VMU_BLK_SZ]);
+		[block % VMU_BLK_SZ16]);
 	put_bh(bufhead);
 out:
 	return block_content;
@@ -229,7 +229,7 @@ static int vmufat_set_fat(struct super_block *sb, long block,
 	int offset, error = 0;
 	struct memcard *vmudetails = sb->s_fs_info;
 
-	offset = block / VMU_BLK_SZ;
+	offset = block / VMU_BLK_SZ16;
 	if (offset >= vmudetails->fat_len) {
 		error = -EINVAL;
 		goto out;
@@ -239,7 +239,7 @@ static int vmufat_set_fat(struct super_block *sb, long block,
 		error = -EIO;
 		goto out;
 	}
-	((u16 *) bh->b_data)[block % VMU_BLK_SZ] = cpu_to_le16(data_to_set);
+	((u16 *) bh->b_data)[block % VMU_BLK_SZ16] = cpu_to_le16(data_to_set);
 	mark_buffer_dirty(bh);
 	put_bh(bh);
 out:
