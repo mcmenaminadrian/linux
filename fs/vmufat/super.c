@@ -2,8 +2,8 @@
 /*
  * VMUFAT file system
  *
- * Copyright (C) 2002 - 2012, 2025	Adrian McMenamin
- * Copyright (C) 2002		        Paul Mundt
+ * Copyright (C) 2002-2012, 2025, 2026	Adrian McMenamin
+ * Copyright (C) 2002			Paul Mundt
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,11 +36,11 @@
 static struct kmem_cache *vmufat_inode_cachep;
 struct kmem_cache *vmufat_blist_cachep;
 static const struct super_operations vmufat_super_operations;
-extern int *day_n;
-extern const struct inode_operations vmufat_inode_operations;
-extern const struct file_operations vmufat_file_operations;
-extern const struct address_space_operations vmufat_address_space_operations;
-extern const struct file_operations vmufat_file_dir_operations;
+int *day_n;
+const struct inode_operations vmufat_inode_operations;
+const struct file_operations vmufat_file_operations;
+const struct address_space_operations vmufat_address_space_operations;
+const struct file_operations vmufat_file_dir_operations;
 
 static time64_t vmufat_get_date(struct buffer_head *bh, int offset)
 {
@@ -137,8 +137,9 @@ struct inode *vmufat_get_inode(struct super_block *sb, long ino)
 				}
 				for (j = 0; j < VMU_DIR_ENTRIES_PER_BLOCK; j++)
 				{
-					u16 ino_read = le16_to_cpu(((u16 *) bh->b_data)
-						[j * VMU_DIR_RECORD_LEN16 +
+					u16 ino_read = le16_to_cpu(((u16 *)
+						bh->b_data)[j * 
+						VMU_DIR_RECORD_LEN16 + 
 						VMUFAT_FIRSTBLOCK_OFFSET16]);
 					if (ino_read == ino) {
 							goto found;
@@ -157,17 +158,17 @@ found:
 			inode->i_mode &= ~(S_IWUGO | S_IXUGO);
 			inode->i_mode |= S_IRUGO;
 			/* Mode - is it write protected? */
-			if ((((u8 *) bh->b_data)[0x01 + offsetindir] ==
-			     0x00) & ~(sb->s_flags & SB_RDONLY)) {
+			if ((((u8 *) bh->b_data)[0x01 + offsetindir] == 0x00) &
+				~(sb->s_flags & SB_RDONLY)) {
 				inode->i_mode |= S_IWUSR;
 			}
 			/* Is file executible - ie a game */
-			if ((((u8 *) bh->b_data)[offsetindir] ==
-			     0xcc) & ~(sb->s_flags & SB_NOEXEC)) {
+			if ((((u8 *) bh->b_data)[offsetindir] == 0xcc) &
+				~(sb->s_flags & SB_NOEXEC)) {
 				inode->i_mode |= S_IXUSR;
 			}
 			inode->i_blocks =
-			    le16_to_cpu(((u16 *) bh->b_data)
+				le16_to_cpu(((u16 *) bh->b_data)
 				[offsetindir / 2 + 0x0C]);
 			inode->i_size = inode->i_blocks * sb->s_blocksize;
 			inode->i_mapping->a_ops =
@@ -206,8 +207,9 @@ static void vmufat_count_freeblocks(struct super_block *sb,
 
 	/* Look through the FAT */
 	for (i = 0; i < vmudetails->numblocks; i++) {
-		if (vmufat_get_fat(sb, i) == VMUFAT_UNALLOCATED)
+		if (vmufat_get_fat(sb, i) == VMUFAT_UNALLOCATED) {
 			free++;
+		}
 	}
 	kstatbuf->f_bfree = free;
 	kstatbuf->f_bavail = free;
@@ -308,7 +310,8 @@ static int vmufat_write_inode(struct inode *in, struct writeback_control *wbc)
 {
 	struct buffer_head *bh = NULL;
 	unsigned long inode_num;
-	int i, j, found = 0, error = 0;
+	int i, j; 
+	int found = 0;
 	int pos, pos16;
 	struct super_block *sb;
 	struct memcard *vmudetails;
@@ -319,7 +322,7 @@ static int vmufat_write_inode(struct inode *in, struct writeback_control *wbc)
 	/* As most real world devices are flash we
 	 * won't update the superblock every time */
 	if (in->i_ino == vmudetails->sb_bnum)
-		goto out;
+		return 0;
 	if (in->i_ino == VMUFAT_ZEROBLOCK)
 		inode_num = 0;
 	else
@@ -333,8 +336,7 @@ static int vmufat_write_inode(struct inode *in, struct writeback_control *wbc)
 		bh = vmufat_sb_bread(sb, i);
 		if (!bh) {
 			mutex_unlock(&vmudetails->mutex);
-			error = -ENXIO;
-			goto out;
+			return -ENXIO;
 		}
 		for (j = 0; j < VMU_DIR_ENTRIES_PER_BLOCK; j++) {
 			pos = j * VMU_DIR_RECORD_LEN;
@@ -342,8 +344,7 @@ static int vmufat_write_inode(struct inode *in, struct writeback_control *wbc)
 			if (bh->b_data[pos] == 0) {
 				mutex_unlock(&vmudetails->mutex);
 				brelse(bh);
-				error = -ENOENT;
-				goto out;
+				return -ENOENT;
 			}
 			if (le16_to_cpu(((u16 *)bh->b_data)
 				[pos16 + VMUFAT_FIRSTBLOCK_OFFSET16])
@@ -357,8 +358,7 @@ static int vmufat_write_inode(struct inode *in, struct writeback_control *wbc)
 found:
 	if (found == 0) {
 		mutex_unlock(&vmudetails->mutex);
-		error = -ENXIO;
-		goto out;
+		return -ENXIO;
 	}
 	/* BCD timestamp it */
 	ktime_get_coarse_real_ts64(&current_time);
@@ -367,8 +367,7 @@ found:
 	mutex_unlock(&vmudetails->mutex);
 	mark_buffer_dirty(bh);
 	brelse(bh);
-out:
-	return error;
+	return 0;
 }
 
 static int check_sb_format(struct buffer_head *bh)
@@ -394,8 +393,7 @@ static void vmufat_populate_vmudata(struct memcard *vmudata,
 	if (test_sz == VMU_PHYS_SZ) {
 		vmudata->numblocks =
 		le16_to_cpu(((u16 *) bh->b_data)[VMU_LOCATION_USRLEN]);
-		if (vmudata->numblocks == 0)
-		{
+		if (vmudata->numblocks == 0) {
 			vmudata->numblocks =
 				vmudata->dir_bnum;
 		}
@@ -415,15 +413,13 @@ static int vmufat_get_size(struct super_block *sb, struct buffer_head **bh)
 		brelse(*bh);
 		*bh = vmufat_sb_bread(sb, i - 1);
 		if (*bh == NULL) {
-			i = -EIO;
-			goto out;
+			return -EIO;
 		}
 		if (check_sb_format(*bh))
 			break;
 	}
 	if (i > VMUFAT_MAX_BLK) {
-		brelse(*bh);
-		i = -ENOENT;
+		return -ENOENT;
 	}
 out:
 	return i;
@@ -432,15 +428,14 @@ out:
 static int vmufat_fill_super(struct super_block *sb, struct fs_context *fc)
 {
 	struct buffer_head *bh = NULL;
-	struct memcard *vmudata;
+	struct memcard *vmudata = NULL;
 	int test_sz;
 	struct inode *root_i;
 	int ret = 0;
 
 	vmudata = kzalloc(sizeof(struct memcard), GFP_KERNEL);
 	if (!vmudata) {
-		ret = -ENOMEM;
-		goto freevmudata_out;
+		return -ENOMEM;
 	}
 	sb->s_fs_info = vmudata;
 	sb_set_blocksize(sb, VMU_BLK_SZ);
@@ -457,7 +452,7 @@ static int vmufat_fill_super(struct super_block *sb, struct fs_context *fc)
 		printk(KERN_ERR "VMUFAT: attempted to mount corrupted vmufat "
 			"or non-vmufat volume as vmufat.\n");
 		ret = test_sz;
-		goto out;
+		goto freebh_out;
 	}
 
 	vmufat_populate_vmudata(vmudata, bh, test_sz);
@@ -487,9 +482,7 @@ static int vmufat_fill_super(struct super_block *sb, struct fs_context *fc)
 
 freebh_out:
 	brelse(bh);
-freevmudata_out:
 	kfree(vmudata);
-
 out:
 	return ret;
 }
@@ -497,7 +490,6 @@ out:
 static void init_once(void *foo)
 {
 	struct vmufat_inode *vi = foo;
-
 	vi->nblcks = 0;
 	inode_init_once(&vi->vfs_inode);
 }
@@ -507,13 +499,16 @@ static int init_inodecache(void)
 	vmufat_blist_cachep = kmem_cache_create("vmufat_block_cache",
 		sizeof(struct vmufat_block), 0, SLAB_RECLAIM_ACCOUNT, 0);
 	if (!vmufat_blist_cachep) {
-		printk(KERN_CRIT "VMUFAT: Could not create block list cache.\n");
+		printk(KERN_CRIT
+			"VMUFAT: Could not create block list cache.\n");
 		return -ENOMEM;
 	}
 	vmufat_inode_cachep = kmem_cache_create("vmufat_inode_cache",
-		sizeof(struct vmufat_inode), 0, SLAB_RECLAIM_ACCOUNT, init_once);
+		sizeof(struct vmufat_inode), 0, SLAB_RECLAIM_ACCOUNT,
+		init_once);
 	if (!vmufat_inode_cachep) {
-		printk(KERN_CRIT "VMUFAT: Could not create inode cache.\n");
+		printk(KERN_CRIT
+			"VMUFAT: Could not create inode cache.\n");
 		kmem_cache_destroy(vmufat_inode_cachep);
 		return -ENOMEM;
 	}
@@ -522,6 +517,7 @@ static int init_inodecache(void)
 
 static void destroy_inodecache(void)
 {
+	// ensure the caches are up to date before we try to destroy them
 	rcu_barrier();
 	kmem_cache_destroy(vmufat_inode_cachep);
 	rcu_barrier();
@@ -534,7 +530,7 @@ static const struct super_operations vmufat_super_operations = {
 	.write_inode =		vmufat_write_inode,
 	.evict_inode =		vmufat_evict_inode,
 	.put_super =		vmufat_put_super,
-	.statfs =			vmufat_statfs,
+	.statfs =		vmufat_statfs,
 };
 
 static int vmufat_get_tree(struct fs_context *fc)
@@ -556,8 +552,8 @@ static struct file_system_type vmufat_fs_type = {
 	.owner =			THIS_MODULE,
 	.name = 			"vmufat",
 	.kill_sb = 			kill_block_super,
-	.fs_flags = 		FS_REQUIRES_DEV,
-	.init_fs_context =	vmufat_init_fs_context,
+	.fs_flags =			FS_REQUIRES_DEV,
+	.init_fs_context =		vmufat_init_fs_context,
 };
 
 static int __init init_vmufat_fs(void)
@@ -573,6 +569,7 @@ static int __init init_vmufat_fs(void)
 static void __exit exit_vmufat_fs(void)
 {
 	destroy_inodecache();
+	// ensure all caches removed before we disappear
 	rcu_barrier();
 	unregister_filesystem(&vmufat_fs_type);
 }
