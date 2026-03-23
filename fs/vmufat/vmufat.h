@@ -8,9 +8,9 @@
 
 /* Some GNU utils might not list files with inode num 0 */
 #define VMUFAT_ZEROBLOCK		0x10000
-#define VMU_BLK_SZ				0x200
+#define VMU_BLK_SZ			0x200
 #define	VMU_BLK_SZ16			0x100
-#define VMU_PHYS_SZ				0x100
+#define VMU_PHYS_SZ			0x100
 
 /* file allocation table markers */
 #define VMUFAT_FILE_END			0xFFFA
@@ -22,10 +22,10 @@
 #define VMUFAT_MAX_BLK			0x10000
 
 /* specifcations for directory entries */
-#define VMU_DIR_RECORD_LEN			0x20
+#define VMU_DIR_RECORD_LEN		0x20
 #define VMU_DIR_RECORD_LEN16		0x10
 #define VMU_DIR_ENTRIES_PER_BLOCK	0x10
-#define VMUFAT_NAME_OFFSET			0x04
+#define VMUFAT_NAME_OFFSET		0x04
 #define VMUFAT_FIRSTBLOCK_OFFSET16	0x01
 #define VMUFAT_START_OFFSET16		0x01
 #define VMUFAT_SIZE_OFFSET16		0x0C
@@ -72,11 +72,11 @@ enum vmufat_date {
 #define SECONDS_PER_HOUR		3600
 #define HOURS_PER_DAY			24
 #define SIXTY_MINS_OR_SECS		60
-#define FEB28					59
+#define FEB28				59
 #define DAYS_PER_WEEK			7
 #define START_OF_EPOCH			70
-#define CENTURY21				30
-#define CENTURY22				130
+#define CENTURY21			30
+#define CENTURY22			130
 
 struct memcard {
 	unsigned int sb_bnum;
