@@ -8,31 +8,33 @@ Android apps etc.
 
 It is not recommended for general use, but does not require a Dreamcast.
 
-All the physical VMU devices that were made were of the same size 256 blocks
-of 512 octets - 128KB in total. But the specification supports a wider range
-of sizes and the filesystem in the Linux kernel is capable of handling volumes
-of a size between 4 blocks and 65536 blocks.
+All the physical VMU devices that were made were of the same size - 256 blocks
+of 512 octets (8 bit bytes) - 128KB in total. But the specification supports a 
+wider range of sizes and the filesystem in the Linux kernel is capable of
+handling volumes of a size between 256 blocks and 65536 blocks.
 
 The standard 256 block VMU is described below:
 
 ========    =======
-BLOCK NO	CONTENT
+BLOCK NO    CONTENT
 ========    =======
-0 - 199     Space used by Dreamcast to save files      
-200 - 240   Space which can be used but which the Dreamcast ignores
+  0 - 199   Space used by Dreamcast to save files      
+200 - 240   Space used by the Dreamcast system
 241 - 253   Directory (can hold 208 file records)
 254         File Allocation Table (FAT)
 255         Root Block
 ========    =======
 
 The standard VMU filesystem has 241 blocks which can be used for file storage
-but a Dreamcast will only use 200 of these. The Linux kernel driver prefers to
-use blocks 0 - 199 when allocating blocks to files, but will use blocks 200 -
-240 if lower numbered blocks are not available.
+but a Dreamcast will only use 200 of these. The other 41 are for Dreamcast system
+use, though the filesystem can access them if set up as a general file store.
+If a device is formatted as strictly compatible with the Dreamcast those blocks
+will not be accessible. Most use cases will want that strict comaptibility.
 
 An executible file (generally a game written in the native machine code of
 the VMU's microcontroller) must begin at block 0 and be stored linearly in
-the volume.
+the volume. The filesystem driver seeks to match that policy but it is not
+absolutely constrained by it.
 
 =========
 DIRECTORY
@@ -100,6 +102,14 @@ Octets 0x4C - 0x4D contain the size (little endian) of the Directory
 Octets 0x4E - 0x4F is Dreamcast specific (icon shape)
 
 Octets 0x50 - 0x51 contain the number (little endian) of user blocks - NB this
-is marked as 200 in a physical VMU although there are in fact 241 usable
-blocks - the reason appears to be that the Directory is not big enough to
-support 1 block files in all user blocks.
+is marked as 200 in a physical VMU. A filesystem formatted for strict
+compatibility will respect this boundary, one formatted as a general
+file store will not and will instead seek to use all writeable blocks.
+
+====================
+Formatting tool
+====================
+
+A formatting tool is available at https://github.com/mcmenaminadrian/mkfs.vmufat
+
+A phsyicali, factory-set, VMU is unlikely to require reformatting, of course.
