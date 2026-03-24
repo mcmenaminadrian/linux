@@ -36,11 +36,11 @@
 static struct kmem_cache *vmufat_inode_cachep;
 struct kmem_cache *vmufat_blist_cachep;
 static const struct super_operations vmufat_super_operations;
-int *day_n;
-const struct inode_operations vmufat_inode_operations;
-const struct file_operations vmufat_file_operations;
-const struct address_space_operations vmufat_address_space_operations;
-const struct file_operations vmufat_file_dir_operations;
+extern int *day_n;
+extern const struct inode_operations vmufat_inode_operations;
+extern const struct file_operations vmufat_file_operations;
+extern const struct address_space_operations vmufat_address_space_operations;
+extern const struct file_operations vmufat_file_dir_operations;
 
 static time64_t vmufat_get_date(struct buffer_head *bh, int offset)
 {
