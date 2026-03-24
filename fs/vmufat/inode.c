@@ -52,7 +52,7 @@ static struct dentry *vmufat_inode_lookup(struct inode *in, struct dentry *dent,
 	int error = 0;
 
 	if (dent->d_name.len > VMUFAT_NAMELEN) {
-		return -ENAMETOOLONG;
+		return ERR_PTR(-ENAMETOOLONG);
 	}
 	sb = in->i_sb;
 	vmudetails = sb->s_fs_info;
@@ -62,7 +62,7 @@ static struct dentry *vmufat_inode_lookup(struct inode *in, struct dentry *dent,
 		brelse(bh);
 		bh = vmufat_sb_bread(sb, i);
 		if (!bh) {
-			return -EIO;
+			return ERR_PTR(-EIO);
 		}
 		for (j = 0; j < VMU_DIR_ENTRIES_PER_BLOCK; j++) {
 			int record_offset = j * VMU_DIR_RECORD_LEN;
@@ -129,7 +129,6 @@ static int vmufat_find_free_forward(struct super_block *sb)
 {
 	struct memcard *vmudetails;
 	int testblk, fatblk, i;
-	int ret = -1;
 	struct buffer_head *bh_fat;
 	vmudetails = sb->s_fs_info;
 	fatblk = vmudetails->fat_bnum;
@@ -153,7 +152,7 @@ static int vmufat_find_free_forward(struct super_block *sb)
 static int vmufat_find_free_backward(struct super_block *sb)
 {
 	struct memcard *vmudetails;
-	int testblk, ret = -1;
+	int testblk;
 	int i, readblk;
 	struct buffer_head *bh_fat;
 
@@ -204,7 +203,7 @@ out:
 static int vmufat_set_fat(struct super_block *sb, long block, u16 data)
 {
 	struct buffer_head *bh;
-	int offset, error = 0;
+	int offset;
 	struct memcard *vmudetails = sb->s_fs_info;
 
 	offset = block / VMU_BLK_SZ16;
@@ -611,7 +610,6 @@ int vmufat_list_blocks(struct inode *in)
 			break;
 		nextblock = fatdata;
 	} while (1);
-out:
 	return error;
 
 unwind_out:
