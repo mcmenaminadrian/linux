@@ -421,7 +421,6 @@ static int vmufat_get_size(struct super_block *sb, struct buffer_head **bh)
 	if (i > VMUFAT_MAX_BLK) {
 		return -ENOENT;
 	}
-out:
 	return i;
 }
 
