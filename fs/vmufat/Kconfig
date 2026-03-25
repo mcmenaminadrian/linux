@@ -11,4 +11,4 @@ config VMUFAT_FS
 	  everyone else should say 'N'.
 
 	  To compile this as a module say 'M' here. The module will be called
-	  vmufat
+	  vmufat.
