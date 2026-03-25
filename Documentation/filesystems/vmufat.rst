@@ -112,4 +112,4 @@ Formatting tool
 
 A formatting tool is available at https://github.com/mcmenaminadrian/mkfs.vmufat
 
-A phsyicali, factory-set, VMU is unlikely to require reformatting, of course.
+A physical, factory-set, VMU is unlikely to require reformatting, of course.
