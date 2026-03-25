@@ -223,12 +223,14 @@ static int vmufat_set_fat(struct super_block *sb, long block, u16 data)
 /* No real time clock or real time clock read fails */
 static void vmufat_save_bcd_no_rtc(struct inode *in, char *bh, int index_to_dir)
 {
-	long years, days;
+	u32 years, days;
 	unsigned char bcd_century, nl_day, bcd_month;
 	unsigned char u8year;
 	time64_t unix_date;
 	unix_date = in->i_mtime_sec;
-	days = unix_date / SECONDS_PER_DAY;
+	time64_t substitute_date = unix_date;
+	do_div(substitute_date, SECONDS_PER_DAY);
+	days = (u32)substitute_date;
 	years = days / DAYS_PER_YEAR;
 	/* 1 Jan gets 1 day later after every leap year */
 	if ((years + 3) / 4 + DAYS_PER_YEAR * years >= days)
@@ -265,15 +267,19 @@ static void vmufat_save_bcd_no_rtc(struct inode *in, char *bh, int index_to_dir)
 	bh[index_to_dir + VMUFAT_DIR_MONTH] = bin2bcd(bcd_month);
 	bh[index_to_dir + VMUFAT_DIR_DAY] =
 	    bin2bcd(days - day_n[bcd_month - 1]);
+	substitute_date = unix_date;
+	do_div(substitute_date, SECONDS_PER_HOUR);
 	bh[index_to_dir + VMUFAT_DIR_HOUR] =
-	    bin2bcd((unix_date / SECONDS_PER_HOUR) % HOURS_PER_DAY);
+	    bin2bcd(substitute_date % HOURS_PER_DAY);
+	substitute_date = unix_date;
+	do_div(substitute_date, SIXTY_MINS_OR_SECS);
 	bh[index_to_dir + VMUFAT_DIR_MIN] =
-		bin2bcd((unix_date / SIXTY_MINS_OR_SECS)
-		 % SIXTY_MINS_OR_SECS);
+		bin2bcd(substitute_date % SIXTY_MINS_OR_SECS);
 	bh[index_to_dir + VMUFAT_DIR_SEC] =
-		bin2bcd(unix_date % SIXTY_MINS_OR_SECS);
+		bin2bcd(do_div(unix_date, SIXTY_MINS_OR_SECS));
 }
 
+#ifdef CONFIG_RTC_CLASS
 static void vmufat_save_bcd_rtc(struct rtc_device *rtc, struct inode *in,
 	char *bh, int index_to_dir)
 {
@@ -294,6 +300,7 @@ static void vmufat_save_bcd_rtc(struct rtc_device *rtc, struct inode *in,
 			% DAYS_PER_WEEK);
 	}
 }
+#endif
 
 /*
  * write out the date in bcd format
@@ -302,14 +309,18 @@ static void vmufat_save_bcd_rtc(struct rtc_device *rtc, struct inode *in,
  */
 void vmufat_save_bcd(struct inode *in, char *bh, int index_to_dir)
 {
+#ifdef CONFIG_RTC_CLASS
 	struct rtc_device *rtc;
 	rtc = rtc_class_open("rtc0");
 	if (!rtc)
+#endif
 		vmufat_save_bcd_no_rtc(in, bh, index_to_dir);
+#ifdef CONFIG_RTC_CLASS
 	else {
 		vmufat_save_bcd_rtc(rtc, in, bh, index_to_dir);
 		rtc_class_close(rtc);
 	}
+#endif
 }
 
 static int vmufat_allocate_inode(umode_t imode,
@@ -498,6 +509,7 @@ static int vmufat_readdir(struct file *filp, struct dir_context *ctx)
 		ctx->pos++;
 		if (error < 0)
 			return error;
+		fallthrough;
 	case 1:
 		error = ctx->actor(ctx, "..", 2, index++,
 			    dentry->d_parent->d_inode->i_ino, DT_DIR);
