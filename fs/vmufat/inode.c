@@ -223,14 +223,14 @@ static int vmufat_set_fat(struct super_block *sb, long block, u16 data)
 /* No real time clock or real time clock read fails */
 static void vmufat_save_bcd_no_rtc(struct inode *in, char *bh, int index_to_dir)
 {
-	u32 years, days;
+	u32 years, days, seconds;
 	unsigned char bcd_century, nl_day, bcd_month;
 	unsigned char u8year;
-	time64_t unix_date;
+	time64_t unix_date, substitute_date;
 	unix_date = in->i_mtime_sec;
-	time64_t substitute_date = unix_date;
+	substitute_date = unix_date;
 	do_div(substitute_date, SECONDS_PER_DAY);
-	days = (u32)substitute_date;
+	days = (u32)substitute_date; /* cast not an issue for next 5 million years+ */
 	years = days / DAYS_PER_YEAR;
 	/* 1 Jan gets 1 day later after every leap year */
 	if ((years + 3) / 4 + DAYS_PER_YEAR * years >= days)
@@ -270,13 +270,12 @@ static void vmufat_save_bcd_no_rtc(struct inode *in, char *bh, int index_to_dir)
 	substitute_date = unix_date;
 	do_div(substitute_date, SECONDS_PER_HOUR);
 	bh[index_to_dir + VMUFAT_DIR_HOUR] =
-	    bin2bcd(substitute_date % HOURS_PER_DAY);
-	substitute_date = unix_date;
-	do_div(substitute_date, SIXTY_MINS_OR_SECS);
+	    bin2bcd(do_div(substitute_date, HOURS_PER_DAY));
+	seconds = do_div(unix_date, SIXTY_MINS_OR_SECS);
 	bh[index_to_dir + VMUFAT_DIR_MIN] =
-		bin2bcd(substitute_date % SIXTY_MINS_OR_SECS);
+		bin2bcd(unix_date);
 	bh[index_to_dir + VMUFAT_DIR_SEC] =
-		bin2bcd(do_div(unix_date, SIXTY_MINS_OR_SECS));
+		bin2bcd(seconds);
 }
 
 #ifdef CONFIG_RTC_CLASS
