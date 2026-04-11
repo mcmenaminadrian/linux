@@ -35,7 +35,7 @@ use, though the filesystem can access them if set up as a general file store.
 If a device is formatted as strictly compatible with the Dreamcast those blocks
 will not be accessible. Most use cases will want that strict compatibility.
 
-An executible file (generally a game written in the native machine code of
+An executable file (generally a game written in the native machine code of
 the VMU's microcontroller) must begin at block 0 and be stored linearly in
 the volume. The filesystem driver seeks to match that policy but it is not
 absolutely constrained by it.
@@ -62,7 +62,7 @@ Comstedt's website - http://mc.pp.se/dc/vms/flashmem.html)
 0x1a-0x1b : 16 bits (little endian) : offset of header (in blocks)
 
 
-Header positioning is a matter for executible files written in native
+Header positioning is a matter for executable files written in native
 code for a physical VMU (an 8 bit Sanyo microcontroller).
 
 BCD dates are encoded as follows:
