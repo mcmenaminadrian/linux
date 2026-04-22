@@ -297,7 +297,6 @@ static int vmufat_statfs(struct dentry *dentry, struct kstatfs *kstatbuf)
 static void vmufat_evict_inode(struct inode *in)
 {
 	truncate_inode_pages(&in->i_data, 0);
-	invalidate_inode_buffers(in);
 	in->i_size = 0;
 	clear_inode(in);
 }
